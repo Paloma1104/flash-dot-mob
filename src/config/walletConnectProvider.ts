@@ -116,21 +116,49 @@ export async function getWalletConnectProvider(): Promise<WalletConnectProviderT
         return providerInstance;
       }
 
-      providerInstance = await EthereumProvider.init({
-        projectId: walletConnectProjectId,
-        chains: [monadTestnet.id],
-        optionalChains: [monadTestnet.id],
-        showQrModal: false,
-        metadata: {
-          name: "Flash.Mob",
-          description: "Turn Your City Into a Treasure Hunt",
-          url: "https://flashmob.app",
-          icons: ["https://flashmob.app/icon.png"],
-        },
-        rpcMap: {
-          [monadTestnet.id]: monadTestnet.rpcUrls.default.http[0],
-        },
-      });
+      try {
+        providerInstance = await EthereumProvider.init({
+          projectId: walletConnectProjectId,
+          chains: [monadTestnet.id],
+          optionalChains: [monadTestnet.id],
+          showQrModal: false,
+          metadata: {
+            name: "Flash.Mob",
+            description: "Turn Your City Into a Treasure Hunt",
+            url: "https://flashmob.app",
+            icons: ["https://flashmob.app/icon.png"],
+          },
+          rpcMap: {
+            [monadTestnet.id]: monadTestnet.rpcUrls.default.http[0],
+          },
+        });
+      } catch (initError) {
+        console.error("❌ Initial WalletConnect init failed:", initError);
+        // If init fails, try to clear storage and retry once
+        console.log("🧹 Clearing WalletConnect storage and retrying...");
+        const keys = await AsyncStorage.getAllKeys();
+        const wcKeys = keys.filter((key) => key.startsWith("wc@2:"));
+        if (wcKeys.length > 0) {
+          await AsyncStorage.multiRemove(wcKeys);
+        }
+
+        // Retry init
+        providerInstance = await EthereumProvider.init({
+          projectId: walletConnectProjectId,
+          chains: [monadTestnet.id],
+          optionalChains: [monadTestnet.id],
+          showQrModal: false,
+          metadata: {
+            name: "Flash.Mob",
+            description: "Turn Your City Into a Treasure Hunt",
+            url: "https://flashmob.app",
+            icons: ["https://flashmob.app/icon.png"],
+          },
+          rpcMap: {
+            [monadTestnet.id]: monadTestnet.rpcUrls.default.http[0],
+          },
+        });
+      }
 
       console.log("✅ WalletConnect EthereumProvider initialized");
 
@@ -145,7 +173,10 @@ export async function getWalletConnectProvider(): Promise<WalletConnectProviderT
 
       return providerInstance;
     } catch (error) {
-      console.error("Failed to initialize WalletConnect provider:", error);
+      console.error(
+        "❌ Fatal: Failed to initialize WalletConnect provider:",
+        error,
+      );
       providerInstance = null;
       return null;
     } finally {
@@ -163,10 +194,22 @@ export async function getWalletConnectProvider(): Promise<WalletConnectProviderT
 export async function disconnectWalletConnect(): Promise<void> {
   if (providerInstance) {
     try {
-      await providerInstance.disconnect();
-      console.log("🔌 WalletConnect disconnected");
-    } catch (error) {
-      console.error("Error disconnecting WalletConnect:", error);
+      // Check if actually connected before trying to disconnect
+      if (providerInstance.connected) {
+        await providerInstance.disconnect();
+        console.log("🔌 WalletConnect disconnected");
+      }
+    } catch (error: any) {
+      // Ignore "Missing or invalid. Record was recently deleted" errors
+      if (
+        typeof error?.message === "string" &&
+        (error.message.includes("Missing or invalid") ||
+          error.message.includes("No matching key"))
+      ) {
+        console.log("⚠️ Session already cleared (ignoring error)");
+      } else {
+        console.error("Error disconnecting WalletConnect:", error);
+      }
     } finally {
       // Always clear the instance after disconnect
       providerInstance = null;
