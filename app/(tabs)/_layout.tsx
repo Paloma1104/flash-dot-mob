@@ -1,19 +1,15 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
-import { GlassDock } from '@/components/navigation/GlassDock';
+import { ModernTabBar } from '@/components/navigation/ModernTabBar';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
-
   return (
     <Tabs
-      tabBar={(props) => <GlassDock {...props} />}
+      tabBar={(props) => <ModernTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        // Hide default tab bar style since we use custom
-        tabBarStyle: { display: 'none' }, // Just in case
+        tabBarStyle: { display: 'none' },
       }}>
       <Tabs.Screen
         name="index"
@@ -30,7 +26,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Leaderboard',
+          title: 'Profile',
         }}
       />
     </Tabs>

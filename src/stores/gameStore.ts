@@ -1,6 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import {
+  getCachedGames,
+  hasMovedSignificantly,
+  setCachedGames,
+} from "../services/gameCache";
 import type { GameDrop, GameSession, GameStats, GameType } from "../types/game";
 import { useUserStore } from "./userStore";
 
@@ -12,6 +17,11 @@ interface GameState {
   // Available games on map
   gameDrops: GameDrop[];
   selectedGameDrop: GameDrop | null;
+
+  // Loading and caching state
+  isLoadingGames: boolean;
+  cachedLocation: { latitude: number; longitude: number } | null;
+  lastLocationUpdate: number;
 
   // User stats
   gameStats: GameStats;
@@ -25,6 +35,19 @@ interface GameState {
   setGameDrops: (drops: GameDrop[]) => void;
   updateGameStats: (newStats: Partial<GameStats>) => void;
   addRecentSession: (session: GameSession) => void;
+
+  // Caching methods
+  loadCachedGames: () => Promise<{
+    games: GameDrop[];
+    location: { latitude: number; longitude: number };
+  } | null>;
+  cacheGames: (
+    games: GameDrop[],
+    latitude: number,
+    longitude: number,
+  ) => Promise<void>;
+  shouldRefreshGames: (newLat: number, newLng: number) => boolean;
+  setLoadingGames: (loading: boolean) => void;
 }
 
 export const useGameStore = create<GameState>()(
@@ -34,6 +57,9 @@ export const useGameStore = create<GameState>()(
       isGameActive: false,
       gameDrops: [],
       selectedGameDrop: null,
+      isLoadingGames: false,
+      cachedLocation: null,
+      lastLocationUpdate: 0,
       gameStats: {
         gamesPlayed: 0,
         gamesWon: 0,
@@ -183,6 +209,57 @@ export const useGameStore = create<GameState>()(
         set({
           recentSessions: [session, ...recentSessions].slice(0, 20), // Keep last 20
         });
+      },
+
+      // Caching methods for instant loading
+      loadCachedGames: async () => {
+        try {
+          const cached = await getCachedGames();
+          if (cached) {
+            set({
+              gameDrops: cached.games,
+              cachedLocation: cached.location,
+            });
+            console.log(`🎮 Loaded ${cached.games.length} games from cache`);
+            return { games: cached.games, location: cached.location };
+          }
+          return null;
+        } catch (error) {
+          console.error("Error loading cached games:", error);
+          return null;
+        }
+      },
+
+      cacheGames: async (
+        games: GameDrop[],
+        latitude: number,
+        longitude: number,
+      ) => {
+        try {
+          await setCachedGames(games, latitude, longitude);
+          set({
+            cachedLocation: { latitude, longitude },
+            lastLocationUpdate: Date.now(),
+          });
+        } catch (error) {
+          console.error("Error caching games:", error);
+        }
+      },
+
+      shouldRefreshGames: (newLat: number, newLng: number): boolean => {
+        const { cachedLocation } = get();
+        if (!cachedLocation) return true;
+        return hasMovedSignificantly(
+          cachedLocation.latitude,
+          cachedLocation.longitude,
+          newLat,
+          newLng,
+          100, // 100 meter threshold
+        );
+      },
+
+      setLoadingGames: (loading: boolean) => {
+        set({ isLoadingGames: loading });
       },
     }),
     {

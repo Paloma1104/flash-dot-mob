@@ -1,6 +1,6 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
-import React from "react";
+import React, { useCallback, useRef } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -48,7 +48,16 @@ export default function MapScreen() {
     hasPermission,
     requestPermission,
   } = useLocation();
-  const { selectedGameDrop, selectGameDrop, setGameDrops } = useGameStore();
+  const {
+    selectedGameDrop,
+    selectGameDrop,
+    setGameDrops,
+    isLoadingGames,
+    loadCachedGames,
+    cacheGames,
+    shouldRefreshGames,
+    setLoadingGames,
+  } = useGameStore();
   const {
     nearbyStations,
     currentStation,
@@ -66,23 +75,78 @@ export default function MapScreen() {
     React.useState(false);
   const [selectedStation, setSelectedStation] =
     React.useState<MultiplayerStation | null>(null);
+  const [isFromCache, setIsFromCache] = React.useState(false);
 
-  // Generate mock game drops when location is available
+  // Ref to track last processed location for debouncing
+  const lastLocationRef = useRef<{
+    lat: number;
+    lng: number;
+    time: number;
+  } | null>(null);
+
+  // Load cached games immediately on mount (instant loading)
   React.useEffect(() => {
-    if (location?.latitude && location?.longitude) {
-      const mockDrops = generateMockGameDrops(
-        location.latitude,
-        location.longitude,
-      );
+    const loadCache = async () => {
+      setLoadingGames(true);
+      const cached = await loadCachedGames();
+      if (cached) {
+        const nearby = getNearbyGameDrops(
+          cached.location.latitude,
+          cached.location.longitude,
+          cached.games,
+          5000,
+        );
+        setNearbyGameDrops(nearby);
+        setIsFromCache(true);
+        console.log("⚡ Instant load: Showing cached games");
+      }
+      setLoadingGames(false);
+    };
+    loadCache();
+  }, [loadCachedGames, setLoadingGames]);
+
+  // Debounced game generation when location changes
+  const generateGamesForLocation = useCallback(
+    async (lat: number, lng: number) => {
+      // Debounce: Skip if last update was within 1 second
+      const now = Date.now();
+      if (
+        lastLocationRef.current &&
+        now - lastLocationRef.current.time < 1000
+      ) {
+        return;
+      }
+
+      // Skip if user hasn't moved significantly (>100m)
+      if (!shouldRefreshGames(lat, lng)) {
+        console.log("📍 User hasn't moved significantly, using cached games");
+        setIsFromCache(false); // But mark as up-to-date
+        return;
+      }
+
+      lastLocationRef.current = { lat, lng, time: now };
+      setLoadingGames(true);
+      setIsFromCache(false);
+
+      // Generate new games
+      const mockDrops = generateMockGameDrops(lat, lng);
       setGameDrops(mockDrops);
 
-      const nearby = getNearbyGameDrops(
-        location.latitude,
-        location.longitude,
-        mockDrops,
-        5000,
-      );
+      const nearby = getNearbyGameDrops(lat, lng, mockDrops, 5000);
       setNearbyGameDrops(nearby);
+
+      // Cache for next time
+      await cacheGames(mockDrops, lat, lng);
+      setLoadingGames(false);
+      console.log(`🎮 Generated ${nearby.length} games at new location`);
+    },
+    [shouldRefreshGames, setLoadingGames, setGameDrops, cacheGames],
+  );
+
+  // Update games when location changes (with debouncing)
+  React.useEffect(() => {
+    if (location?.latitude && location?.longitude) {
+      generateGamesForLocation(location.latitude, location.longitude);
 
       // Fetch multiplayer stations
       fetchNearbyStations(location.latitude, location.longitude);
@@ -90,7 +154,7 @@ export default function MapScreen() {
   }, [
     location?.latitude,
     location?.longitude,
-    setGameDrops,
+    generateGamesForLocation,
     fetchNearbyStations,
   ]);
 
@@ -821,4 +885,3 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
 });
-
