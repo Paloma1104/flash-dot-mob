@@ -29,11 +29,63 @@ import {
   getNearbyGameDrops,
 } from "@/utils/gameDropGenerator";
 
-// Theme colors
+// ============ DESIGN SYSTEM TOKENS ============
+
 const COLORS = {
   primary: "#836EF9",
+  secondary: "#00D9FF",
+  background: "#0D0D0F",
+  surface: "#1A1A2E",
+  textPrimary: "#FFFFFF",
   textSecondary: "rgba(255, 255, 255, 0.6)",
+  textTertiary: "rgba(255, 255, 255, 0.5)",
   textQuaternary: "rgba(255, 255, 255, 0.4)",
+  success: "#06FFA5",
+  warning: "#FFD93D",
+  error: "#FF6B9D",
+};
+
+const SPACING = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  xxl: 24,
+  xxxl: 32,
+};
+
+const TYPOGRAPHY = {
+  h1: { fontSize: 28, fontWeight: "900" as const },
+  h2: { fontSize: 24, fontWeight: "800" as const },
+  h3: { fontSize: 18, fontWeight: "700" as const },
+  title1: { fontSize: 28, fontWeight: "800" as const },
+  title3: { fontSize: 20, fontWeight: "700" as const },
+  headline: { fontSize: 17, fontWeight: "600" as const },
+  subheadline: { fontSize: 15, fontWeight: "500" as const },
+  body: { fontSize: 14, fontWeight: "500" as const },
+  footnote: { fontSize: 13, fontWeight: "400" as const },
+  caption: { fontSize: 12, fontWeight: "600" as const },
+  caption1: { fontSize: 12, fontWeight: "500" as const },
+  caption2: { fontSize: 11, fontWeight: "400" as const },
+  small: { fontSize: 10, fontWeight: "600" as const },
+  tiny: { fontSize: 9, fontWeight: "700" as const },
+};
+
+const RADIUS = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  xxl: 24,
+  full: 9999,
+};
+
+const LAYOUT = {
+  screenPadding: 20,
+  cardPadding: 16,
+  headerHeight: 60,
+  tabBarHeight: 80,
 };
 
 // Simple icon component placeholder
@@ -52,8 +104,45 @@ function AppIcon({
     wallet: "💰",
     trophy: "🏆",
     lock: "🔒",
+    map: "🗺️",
   };
   return <Text style={{ fontSize: size, color }}>{icons[name] || "•"}</Text>;
+}
+
+// Compact header component
+function CompactHeader({
+  title,
+  transparent,
+  leftContent,
+  rightContent,
+}: {
+  title?: string;
+  transparent?: boolean;
+  leftContent?: React.ReactNode;
+  rightContent?: React.ReactNode;
+}) {
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        paddingHorizontal: SPACING.lg,
+        paddingTop: SPACING.md,
+        paddingBottom: SPACING.sm,
+        backgroundColor: transparent ? "transparent" : COLORS.surface,
+      }}
+    >
+      {leftContent || (
+        <Text
+          style={{ color: COLORS.textPrimary, fontSize: 18, fontWeight: "700" }}
+        >
+          {title}
+        </Text>
+      )}
+      {rightContent}
+    </View>
+  );
 }
 
 // Check if Mapbox is available (requires native build)
