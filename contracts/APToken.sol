@@ -43,6 +43,9 @@ contract APToken is ERC20, Ownable {
     /// @dev Address of the GameRewards contract (authorized to burn)
     address public gameRewardsContract;
     
+    /// @dev Address of the MultiplayerStation contract (authorized for transfers)
+    address public multiplayerStationContract;
+    
     /// @dev Track users who have claimed initial airdrop
     mapping(address => bool) public hasClaimedInitialAirdrop;
     
@@ -57,6 +60,7 @@ contract APToken is ERC20, Ownable {
     event APPurchased(address indexed buyer, uint256 monSpent, uint256 apReceived);
     event APBurned(address indexed user, uint256 amount, string reason);
     event GameRewardsContractUpdated(address indexed newContract);
+    event MultiplayerStationContractUpdated(address indexed newContract);
     event TreasuryUpdated(address indexed newTreasury);
     event GameCostsUpdated(uint256 easy, uint256 medium, uint256 hard);
 
@@ -199,6 +203,15 @@ contract APToken is ERC20, Ownable {
         if (_gameRewards == address(0)) revert ZeroAddress();
         gameRewardsContract = _gameRewards;
         emit GameRewardsContractUpdated(_gameRewards);
+    }
+    
+    /**
+     * @notice Set MultiplayerStation contract address (only owner)
+     */
+    function setMultiplayerStationContract(address _multiplayerStation) external onlyOwner {
+        if (_multiplayerStation == address(0)) revert ZeroAddress();
+        multiplayerStationContract = _multiplayerStation;
+        emit MultiplayerStationContractUpdated(_multiplayerStation);
     }
     
     /**
