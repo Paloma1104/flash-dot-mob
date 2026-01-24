@@ -13,6 +13,9 @@ import type {
 import { LNMIIT_MULTIPLAYER_STATION } from "../types/multiplayer";
 import { useUserStore } from "./userStore";
 
+// Backend API URL - no demo data
+const API_BASE = process.env.EXPO_PUBLIC_BACKEND_URL || "http://localhost:3001";
+
 interface MultiplayerState {
   // Available stations
   nearbyStations: MultiplayerStation[];
@@ -62,33 +65,66 @@ export const useMultiplayerStore = create<MultiplayerState>()(
         set({ isLoading: true, error: null });
 
         try {
-          // For now, return the LNMIIT station as the default
-          // In production, this would call the backend API
-          const lnmiitStation: MultiplayerStation = {
-            ...LNMIIT_MULTIPLAYER_STATION,
-            currentPlayers: [],
-            status: "waiting" as StationStatus,
-          };
-
-          // Check if user is close enough to LNMIIT (within 5km for testing)
-          const distance = calculateDistance(
-            latitude,
-            longitude,
-            LNMIIT_MULTIPLAYER_STATION.latitude,
-            LNMIIT_MULTIPLAYER_STATION.longitude,
+          // Call live backend API
+          const response = await fetch(
+            `${API_BASE}/api/stations/nearby?lat=${latitude}&lon=${longitude}`,
           );
 
-          // Show station if within 50km (for testing) or always show for demo
-          if (distance <= 50000) {
-            set({ nearbyStations: [lnmiitStation], isLoading: false });
+          if (!response.ok) {
+            throw new Error("Failed to fetch stations");
+          }
+
+          const data = await response.json();
+
+          if (data.success && data.stations) {
+            // Map API response to MultiplayerStation type
+            const stations: MultiplayerStation[] = data.stations.map(
+              (s: any) => ({
+                id: s.id,
+                name: s.name,
+                latitude: s.latitude,
+                longitude: s.longitude,
+                stakeAmount: s.stakeAmount,
+                minPlayers: s.minPlayers,
+                maxPlayers: s.maxPlayers,
+                currentPlayers: s.currentPlayers.map((p: any) => ({
+                  address: p.address,
+                  displayName: p.displayName,
+                  stakedAmount: s.stakeAmount,
+                  hasSubmitted: false,
+                  isReady: true,
+                  joinedAt: new Date(p.joinedAt).toISOString(),
+                })),
+                status: s.status as StationStatus,
+              }),
+            );
+
+            set({ nearbyStations: stations, isLoading: false });
           } else {
-            // Still show for demo purposes
-            set({ nearbyStations: [lnmiitStation], isLoading: false });
+            // Fallback to LNMIIT station if API fails
+            set({
+              nearbyStations: [
+                {
+                  ...LNMIIT_MULTIPLAYER_STATION,
+                  currentPlayers: [],
+                  status: "waiting" as StationStatus,
+                },
+              ],
+              isLoading: false,
+            });
           }
         } catch (error) {
           console.error("Failed to fetch stations:", error);
+          // Fallback on error
           set({
-            error: "Failed to fetch nearby stations",
+            nearbyStations: [
+              {
+                ...LNMIIT_MULTIPLAYER_STATION,
+                currentPlayers: [],
+                status: "waiting" as StationStatus,
+              },
+            ],
+            error: "Using offline mode",
             isLoading: false,
           });
         }
@@ -116,22 +152,41 @@ export const useMultiplayerStore = create<MultiplayerState>()(
         set({ isLoading: true, error: null });
 
         try {
-          // Deduct AP optimistically
+          // Call live backend API to join station
+          const response = await fetch(`${API_BASE}/api/station/join`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              stationId,
+              player: userStore.walletAddress,
+              displayName: `Player ${station.currentPlayers.length + 1}`,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok || !data.success) {
+            throw new Error(data.error || "Failed to join station");
+          }
+
+          // Deduct AP only after successful API call
           userStore.deductAP(station.stakeAmount);
 
-          // Add user to station players
-          const newPlayer: MultiplayerPlayer = {
-            address: userStore.walletAddress || "unknown",
-            displayName: `Player ${station.currentPlayers.length + 1}`,
-            stakedAmount: station.stakeAmount,
-            hasSubmitted: false,
-            isReady: true,
-            joinedAt: new Date().toISOString(),
-          };
+          // Update station with live players from API
+          const updatedPlayers: MultiplayerPlayer[] = data.players.map(
+            (p: any) => ({
+              address: p.address,
+              displayName: p.displayName,
+              stakedAmount: station.stakeAmount,
+              hasSubmitted: false,
+              isReady: true,
+              joinedAt: new Date(p.joinedAt).toISOString(),
+            }),
+          );
 
           const updatedStation: MultiplayerStation = {
             ...station,
-            currentPlayers: [...station.currentPlayers, newPlayer],
+            currentPlayers: updatedPlayers,
           };
 
           set({
@@ -140,17 +195,13 @@ export const useMultiplayerStore = create<MultiplayerState>()(
             isLoading: false,
           });
 
-          // TODO: Call backend API to join station
-          // TODO: Call smart contract to stake AP
-
           console.log("✅ Joined multiplayer station:", stationId);
           return true;
         } catch (error) {
-          // Refund AP on failure
-          userStore.addAP(station.stakeAmount);
           console.error("Failed to join station:", error);
           set({
-            error: "Failed to join station",
+            error:
+              error instanceof Error ? error.message : "Failed to join station",
             isLoading: false,
           });
           return false;
@@ -170,14 +221,21 @@ export const useMultiplayerStore = create<MultiplayerState>()(
           const userStore = useUserStore.getState();
           const userAddress = userStore.walletAddress;
 
-          // Find user's stake
-          const userPlayer = currentStation.currentPlayers.find(
-            (p) => p.address === userAddress,
-          );
+          // Call live backend API to leave station
+          const response = await fetch(`${API_BASE}/api/station/leave`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              stationId: currentStation.id,
+              player: userAddress,
+            }),
+          });
 
-          if (userPlayer) {
-            // Refund AP
-            userStore.addAP(userPlayer.stakedAmount);
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            // Refund AP after successful leave
+            userStore.addAP(data.refundAmount || currentStation.stakeAmount);
           }
 
           set({
@@ -188,18 +246,21 @@ export const useMultiplayerStore = create<MultiplayerState>()(
             isLoading: false,
           });
 
-          // TODO: Call backend API to leave station
-          // TODO: Call smart contract to refund stake
-
           console.log("✅ Left multiplayer station");
           return true;
         } catch (error) {
           console.error("Failed to leave station:", error);
+          // Still allow local leave on network error
+          const userStore = useUserStore.getState();
+          userStore.addAP(currentStation.stakeAmount);
           set({
-            error: "Failed to leave station",
+            currentStation: null,
+            currentSession: null,
+            isInLobby: false,
+            isInMultiplayerGame: false,
             isLoading: false,
           });
-          return false;
+          return true;
         }
       },
 
@@ -258,14 +319,32 @@ export const useMultiplayerStore = create<MultiplayerState>()(
       },
 
       submitGameResult: async (result: MultiplayerGameResult) => {
-        const { currentSession } = get();
+        const { currentSession, currentStation } = get();
 
-        if (!currentSession) {
+        if (!currentSession || !currentStation) {
           console.error("No active session");
           return false;
         }
 
         try {
+          // Call live backend API to submit score
+          const response = await fetch(`${API_BASE}/api/station/complete`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              stationId: currentStation.id,
+              player: result.playerId,
+              score: result.score,
+              timeSpent: result.timeSpent,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok || !data.success) {
+            throw new Error(data.error || "Failed to submit score");
+          }
+
           // Update player's score in session
           const updatedPlayers = currentSession.players.map((p) =>
             p.address === result.playerId
@@ -280,9 +359,12 @@ export const useMultiplayerStore = create<MultiplayerState>()(
             },
           });
 
-          // TODO: Call backend API to submit score with signature
-
-          console.log("✅ Submitted game result:", result);
+          console.log(
+            "✅ Submitted game result:",
+            result,
+            "signature:",
+            data.signature,
+          );
           return true;
         } catch (error) {
           console.error("Failed to submit result:", error);

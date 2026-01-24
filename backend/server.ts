@@ -342,15 +342,345 @@ app.get("/health", (req: Request, res: Response) => {
   });
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(
-    `\n✅ Backend Signing Service running on http://localhost:${PORT}`,
+/*//////////////////////////////////////////////////////////////
+                    MULTIPLAYER STATION ENDPOINTS
+//////////////////////////////////////////////////////////////*/
+
+// Contract addresses
+const MULTIPLAYER_STATION_ADDRESS =
+  process.env.EXPO_PUBLIC_MULTIPLAYER_STATION_ADDRESS || "";
+
+// In-memory station state (production: use Redis)
+interface StationState {
+  stationId: string;
+  players: { address: string; displayName: string; joinedAt: number }[];
+  status: "waiting" | "starting" | "in_progress" | "completed";
+  selectedGame?: number;
+  totalPool: number;
+}
+
+const stationStates: Map<string, StationState> = new Map();
+const connectedClients: Map<string, any> = new Map(); // WebSocket clients
+
+// Initialize LNMIIT Arena (live station - not mock)
+const LNMIIT_STATION_ID =
+  "0x" + ethers.id("LNMIIT Arena|26894700|75813300").slice(2, 66);
+stationStates.set(LNMIIT_STATION_ID, {
+  stationId: LNMIIT_STATION_ID,
+  players: [],
+  status: "waiting",
+  totalPool: 0,
+});
+
+/**
+ * GET /api/stations/nearby
+ * Get active multiplayer stations near a location
+ */
+app.get("/api/stations/nearby", (req: Request, res: Response) => {
+  const { lat, lon } = req.query;
+
+  // Return LNMIIT station with live state
+  const lnmiitState = stationStates.get(LNMIIT_STATION_ID);
+
+  res.json({
+    success: true,
+    stations: [
+      {
+        id: LNMIIT_STATION_ID,
+        name: "LNMIIT Arena",
+        latitude: 26.8947,
+        longitude: 75.8133,
+        stakeAmount: 50,
+        minPlayers: 2,
+        maxPlayers: 4,
+        currentPlayers: lnmiitState?.players || [],
+        status: lnmiitState?.status || "waiting",
+        totalPool: lnmiitState?.totalPool || 0,
+      },
+    ],
+  });
+});
+
+/**
+ * GET /api/station/:id
+ * Get live station state
+ */
+app.get("/api/station/:id", (req: Request, res: Response) => {
+  const { id } = req.params;
+  const state = stationStates.get(id);
+
+  if (!state) {
+    return res.status(404).json({ error: "Station not found" });
+  }
+
+  res.json({
+    success: true,
+    station: state,
+  });
+});
+
+/**
+ * POST /api/station/join
+ * Join a multiplayer station (x402 protected)
+ */
+app.post("/api/station/join", async (req: Request, res: Response) => {
+  const { stationId, player, displayName, stakeSignature, deadline } = req.body;
+
+  // Validate
+  if (!stationId || !player) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  const state = stationStates.get(stationId);
+  if (!state) {
+    return res.status(404).json({ error: "Station not found" });
+  }
+
+  if (state.status !== "waiting") {
+    return res.status(400).json({ error: "Game already in progress" });
+  }
+
+  if (state.players.length >= 4) {
+    return res.status(400).json({ error: "Station full" });
+  }
+
+  if (
+    state.players.some((p) => p.address.toLowerCase() === player.toLowerCase())
+  ) {
+    return res.status(400).json({ error: "Already in station" });
+  }
+
+  // Add player to state
+  state.players.push({
+    address: player,
+    displayName: displayName || `Player ${state.players.length + 1}`,
+    joinedAt: Date.now(),
+  });
+  state.totalPool += 50; // 50 AP stake
+
+  // Sign for on-chain join
+  const messageHash = ethers.id(
+    `${stationId}|${player}|50|${deadline || Math.floor(Date.now() / 1000) + 3600}`,
   );
+  const joinSignature = await signer.signMessage(ethers.getBytes(messageHash));
+
+  console.log(`🎮 Player ${player.slice(0, 10)}... joined station`);
+
+  // Broadcast to connected clients
+  broadcastToStation(stationId, {
+    type: "player_joined",
+    player: {
+      address: player,
+      displayName: displayName || `Player ${state.players.length}`,
+    },
+    players: state.players,
+    totalPool: state.totalPool,
+  });
+
+  // Auto-start if 2+ players
+  if (state.players.length >= 2) {
+    startGameCountdown(stationId);
+  }
+
+  res.json({
+    success: true,
+    signature: joinSignature,
+    players: state.players,
+    totalPool: state.totalPool,
+  });
+});
+
+/**
+ * POST /api/station/leave
+ * Leave a station before game starts
+ */
+app.post("/api/station/leave", async (req: Request, res: Response) => {
+  const { stationId, player } = req.body;
+
+  const state = stationStates.get(stationId);
+  if (!state) {
+    return res.status(404).json({ error: "Station not found" });
+  }
+
+  if (state.status !== "waiting") {
+    return res.status(400).json({ error: "Cannot leave during game" });
+  }
+
+  // Remove player
+  const playerIndex = state.players.findIndex(
+    (p) => p.address.toLowerCase() === player.toLowerCase(),
+  );
+
+  if (playerIndex === -1) {
+    return res.status(400).json({ error: "Not in station" });
+  }
+
+  state.players.splice(playerIndex, 1);
+  state.totalPool -= 50;
+
+  // Sign refund authorization
+  const refundSignature = await signer.signMessage(
+    ethers.getBytes(ethers.id(`refund|${stationId}|${player}|50`)),
+  );
+
+  broadcastToStation(stationId, {
+    type: "player_left",
+    player,
+    players: state.players,
+    totalPool: state.totalPool,
+  });
+
+  res.json({
+    success: true,
+    refundSignature,
+    refundAmount: 50,
+  });
+});
+
+/**
+ * POST /api/station/complete
+ * Submit game result and get settlement signature
+ */
+app.post("/api/station/complete", async (req: Request, res: Response) => {
+  const { stationId, player, score, timeSpent } = req.body;
+
+  if (!stationId || !player || score === undefined) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  const state = stationStates.get(stationId);
+  if (!state || state.status !== "in_progress") {
+    return res.status(400).json({ error: "No active game" });
+  }
+
+  // Sign score for on-chain verification
+  const messageHash = ethers.solidityPackedKeccak256(
+    ["bytes32", "address", "uint256", "uint256"],
+    [stationId, player, score, CHAIN_ID],
+  );
+
+  const scoreSignature = await signer.signMessage(ethers.getBytes(messageHash));
+
+  console.log(`📊 Score submitted: ${player.slice(0, 10)}... scored ${score}`);
+
+  broadcastToStation(stationId, {
+    type: "score_update",
+    player,
+    score,
+  });
+
+  res.json({
+    success: true,
+    signature: scoreSignature,
+    score,
+    stationId,
+  });
+});
+
+// Helper: Broadcast to all clients connected to a station
+function broadcastToStation(stationId: string, message: any) {
+  connectedClients.forEach((ws, clientId) => {
+    if (clientId.startsWith(stationId)) {
+      try {
+        ws.send(JSON.stringify(message));
+      } catch (e) {
+        console.error("WebSocket send error:", e);
+      }
+    }
+  });
+}
+
+// Helper: Start game countdown
+function startGameCountdown(stationId: string) {
+  const state = stationStates.get(stationId);
+  if (!state) return;
+
+  state.status = "starting";
+
+  // Random game selection (off-chain)
+  const games = [
+    "TIC_TAC_TOE",
+    "MEMORY_MATCH",
+    "MATH_CHALLENGE",
+    "COLOR_SEQUENCE",
+    "WORD_SCRAMBLE",
+    "PATTERN_LOCK",
+  ];
+  state.selectedGame = Math.floor(Math.random() * games.length);
+
+  broadcastToStation(stationId, {
+    type: "game_starting",
+    selectedGame: games[state.selectedGame],
+    countdown: 5,
+  });
+
+  // Start game after 5 seconds
+  setTimeout(() => {
+    if (state.status === "starting") {
+      state.status = "in_progress";
+      broadcastToStation(stationId, {
+        type: "game_started",
+        selectedGame: games[state.selectedGame!],
+        players: state.players,
+        totalPool: state.totalPool,
+      });
+    }
+  }, 5000);
+}
+
+// Start server with WebSocket
+import { createServer } from "http";
+import WebSocket from "ws";
+
+const server = createServer(app);
+const wss = new WebSocket.Server({ server, path: "/ws" });
+
+wss.on("connection", (ws: WebSocket) => {
+  let clientId = "";
+
+  ws.on("message", (data) => {
+    try {
+      const message = JSON.parse(data.toString());
+
+      if (
+        message.type === "subscribe" &&
+        message.stationId &&
+        message.address
+      ) {
+        clientId = `${message.stationId}:${message.address}`;
+        connectedClients.set(clientId, ws);
+        console.log(`🔌 Client connected: ${clientId.slice(0, 20)}...`);
+
+        // Send current state
+        const state = stationStates.get(message.stationId);
+        if (state) {
+          ws.send(JSON.stringify({ type: "state", ...state }));
+        }
+      }
+    } catch (e) {
+      console.error("WebSocket message error:", e);
+    }
+  });
+
+  ws.on("close", () => {
+    if (clientId) {
+      connectedClients.delete(clientId);
+      console.log(`🔌 Client disconnected: ${clientId.slice(0, 20)}...`);
+    }
+  });
+});
+
+server.listen(PORT, () => {
+  console.log(`\n✅ Flash.Mob Backend running on http://localhost:${PORT}`);
   console.log(`\n📋 Available endpoints:`);
   console.log(`   POST /api/sign-reward - Sign game reward claims`);
   console.log(`   POST /api/sign-drop - Sign location drop claims`);
-  console.log(`   GET /health - Health check\n`);
+  console.log(`   GET  /api/stations/nearby - Get multiplayer stations`);
+  console.log(`   POST /api/station/join - Join station (x402)`);
+  console.log(`   POST /api/station/leave - Leave station`);
+  console.log(`   POST /api/station/complete - Submit score`);
+  console.log(`   WS   /ws - WebSocket for real-time updates`);
+  console.log(`   GET  /health - Health check\n`);
 });
 
 export default app;

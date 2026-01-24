@@ -540,4 +540,114 @@ contract MultiplayerStation is Ownable, ReentrancyGuard {
     function toggleStation(bytes32 stationId, bool isActive) external onlyOwner {
         stations[stationId].isActive = isActive;
     }
+
+    /*//////////////////////////////////////////////////////////////
+                        GAS-OPTIMIZED BATCH OPERATIONS
+    //////////////////////////////////////////////////////////////*/
+    
+    /**
+     * @notice Batch settle multiple game sessions in one transaction
+     * @dev Gas optimization - reduces overhead of multiple txs
+     * @param stationId Station to settle
+     * @param players Array of players who submitted scores
+     * @param scores Array of scores (same order as players)
+     * @param signatures Array of backend signatures (same order)
+     */
+    function batchSettleGame(
+        bytes32 stationId,
+        address[] calldata players,
+        uint256[] calldata scores,
+        bytes[] calldata signatures
+    ) external nonReentrant {
+        require(players.length == scores.length && scores.length == signatures.length, "Array length mismatch");
+        require(msg.sender == trustedSigner || msg.sender == owner(), "Unauthorized");
+        
+        GameSession storage session = gameSessions[stationId];
+        require(session.status == StationStatus.InProgress, "Game not in progress");
+        
+        // Verify and record all scores in batch
+        for (uint256 i = 0; i < players.length; i++) {
+            if (playerCurrentStation[players[i]] != stationId) continue;
+            if (session.hasSubmitted[players[i]]) continue;
+            
+            // Verify signature
+            bytes32 messageHash = keccak256(abi.encodePacked(stationId, players[i], scores[i], block.chainid));
+            bytes32 ethSignedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
+            
+            address signer = _recoverSigner(ethSignedHash, signatures[i]);
+            if (signer != trustedSigner) continue;
+            
+            session.scores[players[i]] = scores[i];
+            session.hasSubmitted[players[i]] = true;
+            
+            emit ScoreSubmitted(stationId, players[i], scores[i]);
+        }
+        
+        // Complete game
+        _completeGame(stationId);
+    }
+    
+    /**
+     * @notice Off-chain verified join - gasless stake commitment
+     * @dev Player pre-signs stake commitment, backend submits batch
+     * @param stationId Station to join
+     * @param player Player address
+     * @param signature Player's signature authorizing stake
+     * @param deadline Signature validity deadline
+     */
+    function joinWithSignature(
+        bytes32 stationId,
+        address player,
+        bytes calldata signature,
+        uint256 deadline
+    ) external nonReentrant {
+        require(block.timestamp <= deadline, "Signature expired");
+        require(msg.sender == trustedSigner || msg.sender == owner(), "Unauthorized");
+        
+        Station storage station = stations[stationId];
+        GameSession storage session = gameSessions[stationId];
+        
+        if (!station.isActive) revert StationNotActive();
+        if (session.status != StationStatus.WaitingPlayers) revert GameAlreadyStarted();
+        if (session.players.length >= station.maxPlayers) revert StationFull();
+        if (playerCurrentStation[player] != bytes32(0)) revert AlreadyInStation();
+        
+        // Verify player's stake authorization signature
+        bytes32 messageHash = keccak256(abi.encodePacked(stationId, player, station.stakeAmount, deadline, block.chainid));
+        bytes32 ethSignedHash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", messageHash));
+        
+        address signer = _recoverSigner(ethSignedHash, signature);
+        if (signer != player) revert InvalidSignature();
+        
+        // Transfer AP tokens from player (requires prior approval)
+        (bool success,) = apToken.call(
+            abi.encodeWithSignature(
+                "transferFrom(address,address,uint256)",
+                player,
+                address(this),
+                station.stakeAmount
+            )
+        );
+        if (!success) revert TransferFailed();
+        
+        // Add player to session
+        session.players.push(player);
+        session.stakes[player] = station.stakeAmount;
+        session.totalPool += station.stakeAmount;
+        playerCurrentStation[player] = stationId;
+        
+        emit PlayerJoined(stationId, player, station.stakeAmount);
+        
+        // Auto-start if minimum players reached
+        if (session.players.length >= station.minPlayers) {
+            _startGame(stationId);
+        }
+    }
+    
+    /**
+     * @notice Get minimum stake amount (for x402 payment headers)
+     */
+    function getMinimumStake(bytes32 stationId) external view returns (uint256) {
+        return stations[stationId].stakeAmount;
+    }
 }
