@@ -1,11 +1,25 @@
-import { LinearGradient } from 'expo-linear-gradient';
-import React, { useEffect, useState, useRef } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Vibration } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
-import { GestureDetector, Gesture, GestureHandlerRootView } from 'react-native-gesture-handler';
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useEffect, useRef, useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  Vibration,
+  View,
+} from "react-native";
+import {
+  Gesture,
+  GestureDetector,
+  GestureHandlerRootView,
+} from "react-native-gesture-handler";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 
 interface Puzzle2048GameProps {
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: "easy" | "medium" | "hard";
   onComplete: (score: number, timeSpent?: number) => void;
   onCancel: () => void;
 }
@@ -13,7 +27,11 @@ interface Puzzle2048GameProps {
 const TARGET_TILES = { easy: 512, medium: 1024, hard: 2048 };
 const GRID_SIZE = 4;
 
-export function Puzzle2048Game({ difficulty, onComplete, onCancel }: Puzzle2048GameProps) {
+export function Puzzle2048Game({
+  difficulty,
+  onComplete,
+  onCancel,
+}: Puzzle2048GameProps) {
   const [grid, setGrid] = useState<number[][]>([]);
   const [score, setScore] = useState(0);
   const [startTime] = useState(Date.now());
@@ -28,7 +46,9 @@ export function Puzzle2048Game({ difficulty, onComplete, onCancel }: Puzzle2048G
   }, []);
 
   const initializeGrid = () => {
-    const newGrid = Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(0));
+    const newGrid = Array(GRID_SIZE)
+      .fill(null)
+      .map(() => Array(GRID_SIZE).fill(0));
     addRandomTile(newGrid);
     addRandomTile(newGrid);
     setGrid(newGrid);
@@ -36,18 +56,25 @@ export function Puzzle2048Game({ difficulty, onComplete, onCancel }: Puzzle2048G
 
   const addRandomTile = (currentGrid: number[][]) => {
     const emptyCells: [number, number][] = [];
-    
+
     for (let i = 0; i < GRID_SIZE; i++) {
       for (let j = 0; j < GRID_SIZE; j++) {
-        if (currentGrid[i][j] === 0) {
+        const row = currentGrid[i];
+        if (row && row[j] === 0) {
           emptyCells.push([i, j]);
         }
       }
     }
 
     if (emptyCells.length > 0) {
-      const [row, col] = emptyCells[Math.floor(Math.random() * emptyCells.length)];
-      currentGrid[row][col] = Math.random() < 0.9 ? 2 : 4;
+      const cell = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+      if (cell) {
+        const [row, col] = cell;
+        const gridRow = currentGrid[row];
+        if (gridRow) {
+          gridRow[col] = Math.random() < 0.9 ? 2 : 4;
+        }
+      }
     }
   };
 
@@ -55,14 +82,14 @@ export function Puzzle2048Game({ difficulty, onComplete, onCancel }: Puzzle2048G
     if (isComplete || hasWon || gameEndedRef.current) {
       return;
     }
-    
-    const newGrid = grid.map(row => [...row]);
+
+    const newGrid = grid.map((row) => [...row]);
     let moved = false;
     let newScore = score;
 
     for (let i = 0; i < GRID_SIZE; i++) {
-      const row = newGrid[i].filter(val => val !== 0);
-      
+      const row = newGrid[i].filter((val) => val !== 0);
+
       for (let j = 0; j < row.length - 1; j++) {
         if (row[j] === row[j + 1]) {
           const mergedValue = row[j] * 2;
@@ -76,7 +103,7 @@ export function Puzzle2048Game({ difficulty, onComplete, onCancel }: Puzzle2048G
         row.push(0);
       }
 
-      if (row.join(',') !== newGrid[i].join(',')) {
+      if (row.join(",") !== newGrid[i].join(",")) {
         moved = true;
       }
 
@@ -115,14 +142,14 @@ export function Puzzle2048Game({ difficulty, onComplete, onCancel }: Puzzle2048G
     if (isComplete || hasWon || gameEndedRef.current) {
       return;
     }
-    
-    const newGrid = grid.map(row => [...row].reverse());
+
+    const newGrid = grid.map((row) => [...row].reverse());
     let moved = false;
     let newScore = score;
 
     for (let i = 0; i < GRID_SIZE; i++) {
-      const row = newGrid[i].filter(val => val !== 0);
-      
+      const row = newGrid[i].filter((val) => val !== 0);
+
       for (let j = 0; j < row.length - 1; j++) {
         if (row[j] === row[j + 1]) {
           row[j] *= 2;
@@ -135,7 +162,7 @@ export function Puzzle2048Game({ difficulty, onComplete, onCancel }: Puzzle2048G
         row.push(0);
       }
 
-      if (row.join(',') !== newGrid[i].join(',')) {
+      if (row.join(",") !== newGrid[i].join(",")) {
         moved = true;
       }
 
@@ -176,8 +203,8 @@ export function Puzzle2048Game({ difficulty, onComplete, onCancel }: Puzzle2048G
     if (isComplete || hasWon || gameEndedRef.current) {
       return;
     }
-    
-    const newGrid = grid.map(row => [...row]);
+
+    const newGrid = grid.map((row) => [...row]);
     let moved = false;
     let newScore = score;
 
@@ -243,8 +270,8 @@ export function Puzzle2048Game({ difficulty, onComplete, onCancel }: Puzzle2048G
     if (isComplete || hasWon || gameEndedRef.current) {
       return;
     }
-    
-    const newGrid = grid.map(row => [...row]);
+
+    const newGrid = grid.map((row) => [...row]);
     let moved = false;
     let newScore = score;
 
@@ -309,7 +336,9 @@ export function Puzzle2048Game({ difficulty, onComplete, onCancel }: Puzzle2048G
   const checkWin = (currentGrid: number[][]) => {
     const targetTile = TARGET_TILES[difficulty];
     const maxTile = Math.max(...currentGrid.flat());
-    const hasTarget = currentGrid.some(row => row.some(cell => cell >= targetTile));
+    const hasTarget = currentGrid.some((row) =>
+      row.some((cell) => cell >= targetTile),
+    );
     return hasTarget;
   };
 
@@ -340,18 +369,18 @@ export function Puzzle2048Game({ difficulty, onComplete, onCancel }: Puzzle2048G
 
   const getTileColor = (value: number) => {
     const colors: Record<number, [string, string]> = {
-      0: ['#1A1A2E', '#16213E'],
-      2: ['#FFD93D', '#F5C400'],
-      4: ['#FFB347', '#FF8C00'],
-      8: ['#FF6B9D', '#C44569'],
-      16: ['#C77DFF', '#9D4EDD'],
-      32: ['#06FFA5', '#00C9A7'],
-      64: ['#4ECDC4', '#44A08D'],
-      128: ['#FF8B94', '#F67280'],
-      256: ['#95E1D3', '#66D3C7'],
-      512: ['#AA96DA', '#9B7EDE'],
-      1024: ['#FCBAD3', '#F8A5C2'],
-      2048: ['#FFD93D', '#FFC300'],
+      0: ["#1A1A2E", "#16213E"],
+      2: ["#FFD93D", "#F5C400"],
+      4: ["#FFB347", "#FF8C00"],
+      8: ["#FF6B9D", "#C44569"],
+      16: ["#C77DFF", "#9D4EDD"],
+      32: ["#06FFA5", "#00C9A7"],
+      64: ["#4ECDC4", "#44A08D"],
+      128: ["#FF8B94", "#F67280"],
+      256: ["#95E1D3", "#66D3C7"],
+      512: ["#AA96DA", "#9B7EDE"],
+      1024: ["#FCBAD3", "#F8A5C2"],
+      2048: ["#FFD93D", "#FFC300"],
     };
     return colors[value] || colors[2048];
   };
@@ -360,34 +389,35 @@ export function Puzzle2048Game({ difficulty, onComplete, onCancel }: Puzzle2048G
     transform: [{ scale: celebrationScale.value }],
   }));
 
-  const panGesture = Gesture.Pan()
-    .onEnd((event) => {
-      const { translationX, translationY } = event;
-      
-      if (Math.abs(translationX) > Math.abs(translationY)) {
-        if (translationX > 50) {
-          moveRight();
-        } else if (translationX < -50) {
-          moveLeft();
-        }
-      } else {
-        if (translationY > 50) {
-          moveDown();
-        } else if (translationY < -50) {
-          moveUp();
-        }
+  const panGesture = Gesture.Pan().onEnd((event) => {
+    const { translationX, translationY } = event;
+
+    if (Math.abs(translationX) > Math.abs(translationY)) {
+      if (translationX > 50) {
+        moveRight();
+      } else if (translationX < -50) {
+        moveLeft();
       }
-    });
+    } else {
+      if (translationY > 50) {
+        moveDown();
+      } else if (translationY < -50) {
+        moveUp();
+      }
+    }
+  });
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      <LinearGradient colors={['#FFD93D', '#F5C400']} style={styles.header}>
+      <LinearGradient colors={["#FFD93D", "#F5C400"]} style={styles.header}>
         <TouchableOpacity onPress={onCancel} style={styles.closeButton}>
           <Text style={styles.closeText}>✕</Text>
         </TouchableOpacity>
         <Text style={styles.title}>🎯 2048 Challenge</Text>
         <View style={styles.stats}>
-          <Text style={styles.statText}>Score: {score} | Target Tile: {TARGET_TILES[difficulty]}</Text>
+          <Text style={styles.statText}>
+            Score: {score} | Target Tile: {TARGET_TILES[difficulty]}
+          </Text>
         </View>
       </LinearGradient>
 
@@ -403,14 +433,27 @@ export function Puzzle2048Game({ difficulty, onComplete, onCancel }: Puzzle2048G
             <View style={styles.grid}>
               {grid.map((row, rowIndex) =>
                 row.map((cell, colIndex) => (
-                  <View key={`${rowIndex}-${colIndex}`} style={styles.cellWrapper}>
-                    <LinearGradient colors={getTileColor(cell)} style={styles.cell}>
+                  <View
+                    key={`${rowIndex}-${colIndex}`}
+                    style={styles.cellWrapper}
+                  >
+                    <LinearGradient
+                      colors={getTileColor(cell)}
+                      style={styles.cell}
+                    >
                       {cell > 0 && (
-                        <Text style={[styles.cellText, { fontSize: cell >= 1024 ? 24 : 32 }]}>{cell}</Text>
+                        <Text
+                          style={[
+                            styles.cellText,
+                            { fontSize: cell >= 1024 ? 24 : 32 },
+                          ]}
+                        >
+                          {cell}
+                        </Text>
                       )}
                     </LinearGradient>
                   </View>
-                ))
+                )),
               )}
             </View>
             <Text style={styles.instructionText}>Swipe to move tiles</Text>
@@ -441,7 +484,7 @@ export function Puzzle2048Game({ difficulty, onComplete, onCancel }: Puzzle2048G
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D0D0F',
+    backgroundColor: "#0D0D0F",
   },
   header: {
     padding: 20,
@@ -449,100 +492,100 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
     elevation: 10,
-    shadowColor: '#FFD93D',
+    shadowColor: "#FFD93D",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.5,
     shadowRadius: 20,
   },
   closeButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 40,
     right: 20,
     zIndex: 10,
   },
   closeText: {
-    color: '#000',
+    color: "#000",
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#000',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#000",
+    textAlign: "center",
     marginBottom: 10,
   },
   stats: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   statText: {
-    color: '#000',
+    color: "#000",
     fontSize: 16,
     opacity: 0.9,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   gridContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
   grid: {
     width: 320,
     height: 320,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    backgroundColor: '#16213E',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    backgroundColor: "#16213E",
     borderRadius: 15,
     padding: 8,
     elevation: 20,
   },
   cellWrapper: {
-    width: '25%',
+    width: "25%",
     aspectRatio: 1,
     padding: 4,
   },
   cell: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderRadius: 8,
   },
   cellText: {
-    color: '#FFF',
-    fontWeight: 'bold',
+    color: "#FFF",
+    fontWeight: "bold",
   },
   instructionText: {
-    color: '#AAA',
+    color: "#AAA",
     fontSize: 14,
     marginTop: 20,
   },
   controls: {
     padding: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   controlRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
     marginTop: 10,
   },
   controlButton: {
     width: 60,
     height: 60,
-    backgroundColor: '#FFD93D',
+    backgroundColor: "#FFD93D",
     borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     elevation: 5,
   },
   controlText: {
     fontSize: 28,
-    color: '#000',
+    color: "#000",
   },
   completionContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   completionEmoji: {
     fontSize: 80,
@@ -550,12 +593,12 @@ const styles = StyleSheet.create({
   },
   completionText: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#FFF',
+    fontWeight: "bold",
+    color: "#FFF",
     marginBottom: 10,
   },
   completionSubtext: {
     fontSize: 18,
-    color: '#AAA',
+    color: "#AAA",
   },
 });

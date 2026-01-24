@@ -1,26 +1,41 @@
-import { LinearGradient } from 'expo-linear-gradient';
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Vibration } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withSequence, withTiming } from 'react-native-reanimated';
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useEffect, useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  Vibration,
+  View,
+} from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 
 interface ColorSequenceGameProps {
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: "easy" | "medium" | "hard";
   onComplete: (score: number, timeSpent?: number) => void;
   onCancel: () => void;
 }
 
-const COLORS = [
-  { id: 'red', color: ['#FF6B9D', '#C44569'], name: '🔴' },
-  { id: 'blue', color: ['#4ECDC4', '#44A08D'], name: '🔵' },
-  { id: 'green', color: ['#06FFA5', '#00C9A7'], name: '🟢' },
-  { id: 'yellow', color: ['#FFD93D', '#F5C400'], name: '🟡' },
-  { id: 'purple', color: ['#C77DFF', '#9D4EDD'], name: '🟣' },
-  { id: 'orange', color: ['#FFB347', '#FF8C00'], name: '🟠' },
-];
+const COLORS: { id: string; color: readonly [string, string]; name: string }[] =
+  [
+    { id: "red", color: ["#FF6B9D", "#C44569"], name: "🔴" },
+    { id: "blue", color: ["#4ECDC4", "#44A08D"], name: "🔵" },
+    { id: "green", color: ["#06FFA5", "#00C9A7"], name: "🟢" },
+    { id: "yellow", color: ["#FFD93D", "#F5C400"], name: "🟡" },
+    { id: "purple", color: ["#C77DFF", "#9D4EDD"], name: "🟣" },
+    { id: "orange", color: ["#FFB347", "#FF8C00"], name: "🟠" },
+  ];
 
 const SEQUENCE_LENGTHS = { easy: 5, medium: 8, hard: 12 };
 
-export function ColorSequenceGame({ difficulty, onComplete, onCancel }: ColorSequenceGameProps) {
+export function ColorSequenceGame({
+  difficulty,
+  onComplete,
+  onCancel,
+}: ColorSequenceGameProps) {
   const [sequence, setSequence] = useState<string[]>([]);
   const [playerSequence, setPlayerSequence] = useState<string[]>([]);
   const [isShowing, setIsShowing] = useState(true);
@@ -44,7 +59,10 @@ export function ColorSequenceGame({ difficulty, onComplete, onCancel }: ColorSeq
 
   const generateSequence = () => {
     const length = SEQUENCE_LENGTHS[difficulty];
-    const newSequence = Array.from({ length }, () => COLORS[Math.floor(Math.random() * COLORS.length)].id);
+    const newSequence = Array.from({ length }, () => {
+      const color = COLORS[Math.floor(Math.random() * COLORS.length)];
+      return color ? color.id : COLORS[0]!.id;
+    });
     setSequence(newSequence);
   };
 
@@ -67,19 +85,22 @@ export function ColorSequenceGame({ difficulty, onComplete, onCancel }: ColorSeq
     Vibration.vibrate(10);
 
     const currentIndex = newPlayerSequence.length - 1;
-    
+
     if (newPlayerSequence[currentIndex] !== sequence[currentIndex]) {
       const newMistakes = mistakes + 1;
       setMistakes(newMistakes);
       Vibration.vibrate([0, 50, 50, 50]);
-      
+
       // Game over if too many mistakes
       if (newMistakes >= 3) {
         setIsComplete(true);
-        setTimeout(() => onComplete(0, Math.floor((Date.now() - startTime) / 1000)), 1500);
+        setTimeout(
+          () => onComplete(0, Math.floor((Date.now() - startTime) / 1000)),
+          1500,
+        );
         return;
       }
-      
+
       // Reset and show sequence again
       setTimeout(() => {
         setPlayerSequence([]);
@@ -91,7 +112,7 @@ export function ColorSequenceGame({ difficulty, onComplete, onCancel }: ColorSeq
       celebrationScale.value = withSpring(1.2, {}, () => {
         celebrationScale.value = withSpring(1);
       });
-      
+
       const timeSpent = Math.floor((Date.now() - startTime) / 1000);
       const score = Math.max(0, 1000 - mistakes * 100 - timeSpent * 2);
       setTimeout(() => onComplete(score, timeSpent), 1500);
@@ -104,14 +125,15 @@ export function ColorSequenceGame({ difficulty, onComplete, onCancel }: ColorSeq
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#06FFA5', '#00C9A7']} style={styles.header}>
+      <LinearGradient colors={["#06FFA5", "#00C9A7"]} style={styles.header}>
         <TouchableOpacity onPress={onCancel} style={styles.closeButton}>
           <Text style={styles.closeText}>✕</Text>
         </TouchableOpacity>
         <Text style={styles.title}>🌈 Color Memory</Text>
         <View style={styles.stats}>
           <Text style={styles.statText}>
-            Progress: {playerSequence.length}/{sequence.length} | Mistakes: {mistakes}
+            Progress: {playerSequence.length}/{sequence.length} | Mistakes:{" "}
+            {mistakes}
           </Text>
         </View>
       </LinearGradient>
@@ -125,13 +147,18 @@ export function ColorSequenceGame({ difficulty, onComplete, onCancel }: ColorSeq
       ) : (
         <View style={styles.gameContainer}>
           <View style={styles.statusContainer}>
-            <Text style={styles.statusText}>{isShowing ? '👀 Watch the sequence...' : '🎮 Repeat the sequence!'}</Text>
+            <Text style={styles.statusText}>
+              {isShowing
+                ? "👀 Watch the sequence..."
+                : "🎮 Repeat the sequence!"}
+            </Text>
           </View>
 
           <View style={styles.colorGrid}>
             {COLORS.map((color, index) => {
-              const isHighlighted = isShowing && sequence[currentShowIndex] === color.id;
-              
+              const isHighlighted =
+                isShowing && sequence[currentShowIndex] === color.id;
+
               return (
                 <TouchableOpacity
                   key={color.id}
@@ -145,10 +172,17 @@ export function ColorSequenceGame({ difficulty, onComplete, onCancel }: ColorSeq
                     style={[
                       styles.colorGradient,
                       isHighlighted && styles.highlighted,
-                      !isShowing && styles.interactiveButton
+                      !isShowing && styles.interactiveButton,
                     ]}
                   >
-                    <Text style={[styles.colorEmoji, isHighlighted && styles.highlightedEmoji]}>{color.name}</Text>
+                    <Text
+                      style={[
+                        styles.colorEmoji,
+                        isHighlighted && styles.highlightedEmoji,
+                      ]}
+                    >
+                      {color.name}
+                    </Text>
                     {isHighlighted && <View style={styles.pulseRing} />}
                   </LinearGradient>
                 </TouchableOpacity>
@@ -163,7 +197,7 @@ export function ColorSequenceGame({ difficulty, onComplete, onCancel }: ColorSeq
                 const color = COLORS.find((c) => c.id === colorId);
                 const isCorrect = playerSequence[index] === colorId;
                 const isActive = index === playerSequence.length;
-                
+
                 return (
                   <View
                     key={index}
@@ -173,9 +207,9 @@ export function ColorSequenceGame({ difficulty, onComplete, onCancel }: ColorSeq
                         backgroundColor: isCorrect
                           ? color?.color[0]
                           : index < playerSequence.length
-                          ? '#FF6B9D'
-                          : '#1A1A2E',
-                        borderColor: isActive ? '#06FFA5' : 'transparent',
+                            ? "#FF6B9D"
+                            : "#1A1A2E",
+                        borderColor: isActive ? "#06FFA5" : "transparent",
                         borderWidth: isActive ? 3 : 0,
                       },
                     ]}
@@ -193,7 +227,7 @@ export function ColorSequenceGame({ difficulty, onComplete, onCancel }: ColorSeq
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D0D0F',
+    backgroundColor: "#0D0D0F",
   },
   header: {
     padding: 20,
@@ -201,77 +235,77 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
     elevation: 10,
-    shadowColor: '#06FFA5',
+    shadowColor: "#06FFA5",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.5,
     shadowRadius: 20,
   },
   closeButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 40,
     right: 20,
     zIndex: 10,
   },
   closeText: {
-    color: '#000',
+    color: "#000",
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#000',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#000",
+    textAlign: "center",
     marginBottom: 10,
   },
   stats: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   statText: {
-    color: '#000',
+    color: "#000",
     fontSize: 16,
     opacity: 0.9,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   gameContainer: {
     flex: 1,
     padding: 20,
-    justifyContent: 'space-around',
+    justifyContent: "space-around",
   },
   statusContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: 20,
   },
   statusText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 22,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
   },
   colorGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
     gap: 15,
   },
   colorButton: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    overflow: 'hidden',
+    overflow: "hidden",
     elevation: 5,
   },
   colorGradient: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   highlighted: {
     elevation: 20,
     transform: [{ scale: 1.25 }],
     borderWidth: 5,
-    borderColor: '#fff',
-    shadowColor: '#fff',
+    borderColor: "#fff",
+    shadowColor: "#fff",
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 1,
     shadowRadius: 20,
@@ -281,36 +315,36 @@ const styles = StyleSheet.create({
   },
   highlightedEmoji: {
     transform: [{ scale: 1.3 }],
-    textShadowColor: '#fff',
+    textShadowColor: "#fff",
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 10,
   },
   interactiveButton: {
     borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
+    borderColor: "rgba(255, 255, 255, 0.4)",
   },
   pulseRing: {
-    position: 'absolute',
-    width: '120%',
-    height: '120%',
+    position: "absolute",
+    width: "120%",
+    height: "120%",
     borderRadius: 60,
     borderWidth: 4,
-    borderColor: '#fff',
+    borderColor: "#fff",
     opacity: 0.7,
   },
   sequenceDisplay: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: 20,
   },
   sequenceTitle: {
-    color: '#AAA',
+    color: "#AAA",
     fontSize: 16,
     marginBottom: 15,
   },
   sequenceBar: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
     gap: 8,
   },
   sequenceDot: {
@@ -320,8 +354,8 @@ const styles = StyleSheet.create({
   },
   completionContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   completionEmoji: {
     fontSize: 80,
@@ -329,12 +363,12 @@ const styles = StyleSheet.create({
   },
   completionText: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#FFF',
+    fontWeight: "bold",
+    color: "#FFF",
     marginBottom: 10,
   },
   completionSubtext: {
     fontSize: 18,
-    color: '#AAA',
+    color: "#AAA",
   },
 });

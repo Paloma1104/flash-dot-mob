@@ -1,10 +1,20 @@
-import { LinearGradient } from 'expo-linear-gradient';
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Vibration } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring, withSequence, withTiming } from 'react-native-reanimated';
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useEffect, useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  Vibration,
+  View,
+} from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 
 interface PatternLockGameProps {
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: "easy" | "medium" | "hard";
   onComplete: (score: number, timeSpent?: number) => void;
   onCancel: () => void;
 }
@@ -12,7 +22,11 @@ interface PatternLockGameProps {
 const GRID_SIZE = 3;
 const PATTERN_LENGTHS = { easy: 4, medium: 6, hard: 9 };
 
-export function PatternLockGame({ difficulty, onComplete, onCancel }: PatternLockGameProps) {
+export function PatternLockGame({
+  difficulty,
+  onComplete,
+  onCancel,
+}: PatternLockGameProps) {
   const [pattern, setPattern] = useState<number[]>([]);
   const [userPattern, setUserPattern] = useState<number[]>([]);
   const [isShowing, setIsShowing] = useState(true);
@@ -37,15 +51,15 @@ export function PatternLockGame({ difficulty, onComplete, onCancel }: PatternLoc
     const length = PATTERN_LENGTHS[difficulty];
     const dots = Array.from({ length: 9 }, (_, i) => i);
     const newPattern: number[] = [];
-    
+
     while (newPattern.length < length) {
       const randomIndex = Math.floor(Math.random() * dots.length);
       const dot = dots[randomIndex];
-      if (!newPattern.includes(dot)) {
+      if (dot !== undefined && !newPattern.includes(dot)) {
         newPattern.push(dot);
       }
     }
-    
+
     setPattern(newPattern);
   };
 
@@ -54,7 +68,7 @@ export function PatternLockGame({ difficulty, onComplete, onCancel }: PatternLoc
       setCurrentShowIndex(i);
       await new Promise((resolve) => setTimeout(resolve, 600));
     }
-    
+
     await new Promise((resolve) => setTimeout(resolve, 800));
     setIsShowing(false);
     setCurrentShowIndex(-1);
@@ -82,7 +96,7 @@ export function PatternLockGame({ difficulty, onComplete, onCancel }: PatternLoc
         celebrationScale.value = withSpring(1);
       });
       Vibration.vibrate(20);
-      
+
       const timeSpent = Math.floor((Date.now() - startTime) / 1000);
       const score = Math.max(0, 1000 - attempts * 200 - timeSpent);
       setTimeout(() => onComplete(score, timeSpent), 1500);
@@ -90,14 +104,17 @@ export function PatternLockGame({ difficulty, onComplete, onCancel }: PatternLoc
       const newAttempts = attempts + 1;
       setAttempts(newAttempts);
       Vibration.vibrate([0, 50, 50, 50]);
-      
+
       // Game over if too many attempts
       if (newAttempts >= 5) {
         setIsComplete(true);
-        setTimeout(() => onComplete(0, Math.floor((Date.now() - startTime) / 1000)), 1500);
+        setTimeout(
+          () => onComplete(0, Math.floor((Date.now() - startTime) / 1000)),
+          1500,
+        );
         return;
       }
-      
+
       setTimeout(() => {
         setUserPattern([]);
         if (newAttempts >= 2) {
@@ -114,13 +131,15 @@ export function PatternLockGame({ difficulty, onComplete, onCancel }: PatternLoc
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#F38181', '#E74C3C']} style={styles.header}>
+      <LinearGradient colors={["#F38181", "#E74C3C"]} style={styles.header}>
         <TouchableOpacity onPress={onCancel} style={styles.closeButton}>
           <Text style={styles.closeText}>✕</Text>
         </TouchableOpacity>
         <Text style={styles.title}>🔐 Pattern Lock</Text>
         <View style={styles.stats}>
-          <Text style={styles.statText}>Attempts: {attempts} | Length: {pattern.length}</Text>
+          <Text style={styles.statText}>
+            Attempts: {attempts} | Length: {pattern.length}
+          </Text>
         </View>
       </LinearGradient>
 
@@ -134,7 +153,9 @@ export function PatternLockGame({ difficulty, onComplete, onCancel }: PatternLoc
         <View style={styles.gameContainer}>
           <View style={styles.statusContainer}>
             <Text style={styles.statusText}>
-              {isShowing ? '👀 Watch the pattern...' : '🎮 Recreate the pattern!'}
+              {isShowing
+                ? "👀 Watch the pattern..."
+                : "🎮 Recreate the pattern!"}
             </Text>
           </View>
 
@@ -157,8 +178,8 @@ export function PatternLockGame({ difficulty, onComplete, onCancel }: PatternLoc
                   <LinearGradient
                     colors={
                       isShown || isSelected
-                        ? ['#F38181', '#E74C3C']
-                        : ['#1A1A2E', '#16213E']
+                        ? ["#F38181", "#E74C3C"]
+                        : ["#1A1A2E", "#16213E"]
                     }
                     style={[
                       styles.dotGradient,
@@ -179,7 +200,10 @@ export function PatternLockGame({ difficulty, onComplete, onCancel }: PatternLoc
               style={styles.resetButton}
               onPress={() => setUserPattern([])}
             >
-              <LinearGradient colors={['#FFD93D', '#F5C400']} style={styles.resetGradient}>
+              <LinearGradient
+                colors={["#FFD93D", "#F5C400"]}
+                style={styles.resetGradient}
+              >
                 <Text style={styles.resetText}>↻ Reset Pattern</Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -193,7 +217,7 @@ export function PatternLockGame({ difficulty, onComplete, onCancel }: PatternLoc
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D0D0F',
+    backgroundColor: "#0D0D0F",
   },
   header: {
     padding: 20,
@@ -201,73 +225,73 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
     elevation: 10,
-    shadowColor: '#F38181',
+    shadowColor: "#F38181",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.5,
     shadowRadius: 20,
   },
   closeButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 40,
     right: 20,
     zIndex: 10,
   },
   closeText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFF',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#FFF",
+    textAlign: "center",
     marginBottom: 10,
   },
   stats: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   statText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 16,
     opacity: 0.9,
   },
   gameContainer: {
     flex: 1,
     padding: 20,
-    justifyContent: 'space-around',
+    justifyContent: "space-around",
   },
   statusContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: 20,
   },
   statusText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 22,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
   },
   lockGrid: {
     width: 300,
     height: 300,
-    alignSelf: 'center',
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    alignSelf: "center",
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 20,
   },
   dot: {
     width: 80,
     height: 80,
     borderRadius: 40,
-    overflow: 'hidden',
+    overflow: "hidden",
     elevation: 5,
   },
   dotGradient: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 3,
-    borderColor: '#F38181',
+    borderColor: "#F38181",
     borderRadius: 40,
   },
   dotActive: {
@@ -275,31 +299,31 @@ const styles = StyleSheet.create({
     transform: [{ scale: 1.1 }],
   },
   dotNumber: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   resetButton: {
     height: 60,
     borderRadius: 30,
-    overflow: 'hidden',
+    overflow: "hidden",
     elevation: 5,
     marginHorizontal: 40,
   },
   resetGradient: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   resetText: {
-    color: '#000',
+    color: "#000",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   completionContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   completionEmoji: {
     fontSize: 80,
@@ -307,12 +331,12 @@ const styles = StyleSheet.create({
   },
   completionText: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#FFF',
+    fontWeight: "bold",
+    color: "#FFF",
     marginBottom: 10,
   },
   completionSubtext: {
     fontSize: 18,
-    color: '#AAA',
+    color: "#AAA",
   },
 });

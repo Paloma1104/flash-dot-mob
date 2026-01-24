@@ -94,7 +94,9 @@ export function MultiplayerLobby({
       // Select random game and start
       const randomGame =
         MULTIPLAYER_GAMES[Math.floor(Math.random() * MULTIPLAYER_GAMES.length)];
-      onGameStart(randomGame);
+      if (randomGame) {
+        onGameStart(randomGame);
+      }
     }
   }, [countdown]);
 

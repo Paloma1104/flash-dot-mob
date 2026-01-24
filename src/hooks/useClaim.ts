@@ -1,12 +1,12 @@
 import { locationEngine } from "@/src/services/location/locationEngine";
+import { checkDeviceIntegrity } from "@/src/services/security/deviceIntegrity";
+import { checkVelocity } from "@/src/services/security/velocityCheck";
 import { useDropStore } from "@/src/stores/dropStore";
 import { useUserStore } from "@/src/stores/userStore";
 import * as Haptics from "expo-haptics";
 import { useCallback, useState } from "react";
-import { useWallet } from "./useWallet";
 import { useClaimDrop } from "./useBlockchain";
-import { checkVelocity } from "@/src/services/security/velocityCheck";
-import { checkDeviceIntegrity } from "@/src/services/security/deviceIntegrity";
+import { useWallet } from "./useWallet";
 
 interface ClaimResult {
   success: boolean;
@@ -56,8 +56,10 @@ export function useClaim(): UseClaimReturn {
       try {
         // 1. Check device integrity (anti-cheat)
         const deviceCheck = await checkDeviceIntegrity();
-        if (!deviceCheck.isValid) {
-          throw new Error(`Device integrity check failed: ${deviceCheck.reason}`);
+        if (!deviceCheck.passed) {
+          throw new Error(
+            `Device integrity check failed: ${deviceCheck.blockers.join(", ")}`,
+          );
         }
 
         // 2. Enable high-accuracy GPS for claim verification
@@ -78,11 +80,13 @@ export function useClaim(): UseClaimReturn {
             timestamp: Date.now(),
             accuracy: location.accuracy || null,
           },
-          'walking' // Max allowed speed for claiming
+          "walking", // Max allowed speed for claiming
         );
 
         if (!velocityCheck.passed) {
-          throw new Error(`Velocity check failed: ${velocityCheck.reason || 'Moving too fast'}`);
+          throw new Error(
+            `Velocity check failed: ${velocityCheck.reason || "Moving too fast"}`,
+          );
         }
 
         // 5. Haptic feedback - claim initiated
@@ -93,39 +97,40 @@ export function useClaim(): UseClaimReturn {
         markDropClaimed(dropId);
 
         // 7. Call backend to verify GPS and get EIP-712 signature
-        const backendUrl = process.env.EXPO_PUBLIC_BACKEND_URL || 'http://localhost:3001';
+        const backendUrl =
+          process.env.EXPO_PUBLIC_BACKEND_URL || "http://localhost:3001";
         const response = await fetch(`${backendUrl}/api/sign-drop`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             dropId,
             claimer: address,
             amount: drop.amount,
             userLat: location.latitude,
             userLon: location.longitude,
-            dropLat: drop.location.latitude,
-            dropLon: drop.location.longitude,
-          })
+            dropLat: drop.latitude,
+            dropLon: drop.longitude,
+          }),
         });
 
-        if (ole.log(`✅ Drop claimed: ${drop.amount} MON, tx: ${txHash}`);
-        cons!response.ok) {
+        if (!response.ok) {
           const errorData = await response.json();
-          throw new Error(errorData.message || 'Backend verification failed');
+          throw new Error(errorData.message || "Backend verification failed");
         }
 
-        const { signature, nonce, deadline, dropIdBytes32 } = await response.json();
+        const { signature, nonce, deadline, dropIdBytes32 } =
+          await response.json();
 
         // 8. Submit blockchain transaction
         const txHash = await claimDropOnChain(
           dropIdBytes32,
-          BigInt(drop.amount) * BigInt(10**18), // Convert to wei
+          BigInt(drop.amount) * BigInt(10 ** 18), // Convert to wei
           BigInt(deadline),
-          signature as `0x${string}`
+          signature as `0x${string}`,
         );
 
         if (!txHash) {
-          throw new Error('Blockchain transaction failed');
+          throw new Error("Blockchain transaction failed");
         }
 
         // 9. Confirm the optimistic update
@@ -165,8 +170,8 @@ export function useClaim(): UseClaimReturn {
       addPendingBalance,
       markDropClaimed,
       confirmPendingBalance,
-      claimDropOnChainngBalance,
-      signMessage,
+      claimDropOnChain,
+      revertPendingBalance,
     ],
   );
 

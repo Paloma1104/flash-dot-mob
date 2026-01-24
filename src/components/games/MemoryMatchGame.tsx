@@ -1,20 +1,49 @@
-import { LinearGradient } from 'expo-linear-gradient';
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Vibration } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useEffect, useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  Vibration,
+  View,
+} from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 
 interface MemoryMatchGameProps {
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: "easy" | "medium" | "hard";
   onComplete: (score: number, timeSpent?: number) => void;
   onCancel: () => void;
 }
 
 const CARD_COUNTS = { easy: 8, medium: 16, hard: 24 };
-const EMOJIS = ['🎮', '🎯', '🎨', '🎭', '🎪', '🎬', '🎸', '🎹', '🎺', '🎻', '🎲', '🎰'];
+const EMOJIS = [
+  "🎮",
+  "🎯",
+  "🎨",
+  "🎭",
+  "🎪",
+  "🎬",
+  "🎸",
+  "🎹",
+  "🎺",
+  "🎻",
+  "🎲",
+  "🎰",
+];
 
-export function MemoryMatchGame({ difficulty, onComplete, onCancel }: MemoryMatchGameProps) {
+export function MemoryMatchGame({
+  difficulty,
+  onComplete,
+  onCancel,
+}: MemoryMatchGameProps) {
   const cardCount = CARD_COUNTS[difficulty];
-  const [cards, setCards] = useState<{ id: number; emoji: string; isFlipped: boolean; isMatched: boolean }[]>([]);
+  const [cards, setCards] = useState<
+    { id: number; emoji: string; isFlipped: boolean; isMatched: boolean }[]
+  >([]);
   const [selectedCards, setSelectedCards] = useState<number[]>([]);
   const [moves, setMoves] = useState(0);
   const [matches, setMatches] = useState(0);
@@ -30,7 +59,7 @@ export function MemoryMatchGame({ difficulty, onComplete, onCancel }: MemoryMatc
     const pairCount = cardCount / 2;
     const selectedEmojis = EMOJIS.slice(0, pairCount);
     const cardPairs = [...selectedEmojis, ...selectedEmojis];
-    
+
     const shuffled = cardPairs
       .sort(() => Math.random() - 0.5)
       .map((emoji, index) => ({
@@ -45,10 +74,21 @@ export function MemoryMatchGame({ difficulty, onComplete, onCancel }: MemoryMatc
 
   const handleCardPress = (id: number) => {
     const isCompleted = matches === cardCount / 2;
-    if (isCompleted || selectedCards.length >= 2 || cards[id].isFlipped || cards[id].isMatched) return;
+    const card = cards[id];
+    if (
+      isCompleted ||
+      selectedCards.length >= 2 ||
+      !card ||
+      card.isFlipped ||
+      card.isMatched
+    )
+      return;
 
     const newCards = [...cards];
-    newCards[id].isFlipped = true;
+    const cardToFlip = newCards[id];
+    if (cardToFlip) {
+      cardToFlip.isFlipped = true;
+    }
     setCards(newCards);
     Vibration.vibrate(10);
 
@@ -57,19 +97,27 @@ export function MemoryMatchGame({ difficulty, onComplete, onCancel }: MemoryMatc
 
     if (newSelected.length === 2) {
       setMoves(moves + 1);
-      checkMatch(newSelected[0], newSelected[1]);
+      const first = newSelected[0];
+      const second = newSelected[1];
+      if (first !== undefined && second !== undefined) {
+        checkMatch(first, second);
+      }
     }
   };
 
   const checkMatch = (id1: number, id2: number) => {
     setTimeout(() => {
       const newCards = [...cards];
-      
-      if (newCards[id1].emoji === newCards[id2].emoji) {
-        newCards[id1].isMatched = true;
-        newCards[id2].isMatched = true;
+      const card1 = newCards[id1];
+      const card2 = newCards[id2];
+
+      if (!card1 || !card2) return;
+
+      if (card1.emoji === card2.emoji) {
+        card1.isMatched = true;
+        card2.isMatched = true;
         Vibration.vibrate(20);
-        
+
         const newMatches = matches + 1;
         setMatches(newMatches);
 
@@ -82,8 +130,8 @@ export function MemoryMatchGame({ difficulty, onComplete, onCancel }: MemoryMatc
           setTimeout(() => onComplete(score, timeSpent), 1500);
         }
       } else {
-        newCards[id1].isFlipped = false;
-        newCards[id2].isFlipped = false;
+        card1.isFlipped = false;
+        card2.isFlipped = false;
         Vibration.vibrate([0, 50, 50, 50]);
       }
 
@@ -92,7 +140,7 @@ export function MemoryMatchGame({ difficulty, onComplete, onCancel }: MemoryMatc
     }, 800);
   };
 
-  const columns = difficulty === 'easy' ? 4 : difficulty === 'medium' ? 4 : 6;
+  const columns = difficulty === "easy" ? 4 : difficulty === "medium" ? 4 : 6;
   const cardSize = (320 - (columns + 1) * 8) / columns;
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -103,13 +151,15 @@ export function MemoryMatchGame({ difficulty, onComplete, onCancel }: MemoryMatc
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#4ECDC4', '#44A08D']} style={styles.header}>
+      <LinearGradient colors={["#4ECDC4", "#44A08D"]} style={styles.header}>
         <TouchableOpacity onPress={onCancel} style={styles.closeButton}>
           <Text style={styles.closeText}>✕</Text>
         </TouchableOpacity>
         <Text style={styles.title}>🃏 Memory Match</Text>
         <View style={styles.stats}>
-          <Text style={styles.statText}>Moves: {moves} | Matches: {matches}/{cardCount / 2}</Text>
+          <Text style={styles.statText}>
+            Moves: {moves} | Matches: {matches}/{cardCount / 2}
+          </Text>
         </View>
       </LinearGradient>
 
@@ -130,12 +180,33 @@ export function MemoryMatchGame({ difficulty, onComplete, onCancel }: MemoryMatc
                 disabled={card.isFlipped || card.isMatched}
               >
                 {card.isFlipped || card.isMatched ? (
-                  <LinearGradient colors={card.isMatched ? ['#06FFA5', '#00C9A7'] : ['#4ECDC4', '#44A08D']} style={styles.cardFront}>
-                    <Text style={[styles.cardEmoji, { fontSize: cardSize * 0.5 }]}>{card.emoji}</Text>
+                  <LinearGradient
+                    colors={
+                      card.isMatched
+                        ? ["#06FFA5", "#00C9A7"]
+                        : ["#4ECDC4", "#44A08D"]
+                    }
+                    style={styles.cardFront}
+                  >
+                    <Text
+                      style={[styles.cardEmoji, { fontSize: cardSize * 0.5 }]}
+                    >
+                      {card.emoji}
+                    </Text>
                   </LinearGradient>
                 ) : (
-                  <LinearGradient colors={['#1A1A2E', '#16213E']} style={styles.cardBack}>
-                    <Text style={[styles.cardQuestion, { fontSize: cardSize * 0.4 }]}>?</Text>
+                  <LinearGradient
+                    colors={["#1A1A2E", "#16213E"]}
+                    style={styles.cardBack}
+                  >
+                    <Text
+                      style={[
+                        styles.cardQuestion,
+                        { fontSize: cardSize * 0.4 },
+                      ]}
+                    >
+                      ?
+                    </Text>
                   </LinearGradient>
                 )}
               </TouchableOpacity>
@@ -150,7 +221,7 @@ export function MemoryMatchGame({ difficulty, onComplete, onCancel }: MemoryMatc
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D0D0F',
+    backgroundColor: "#0D0D0F",
   },
   header: {
     padding: 20,
@@ -158,74 +229,74 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
     elevation: 10,
-    shadowColor: '#4ECDC4',
+    shadowColor: "#4ECDC4",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.5,
     shadowRadius: 20,
   },
   closeButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 40,
     right: 20,
     zIndex: 10,
   },
   closeText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFF',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#FFF",
+    textAlign: "center",
     marginBottom: 10,
   },
   stats: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   statText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 16,
     opacity: 0.9,
   },
   gridContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
   grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
   card: {
     borderRadius: 12,
-    overflow: 'hidden',
+    overflow: "hidden",
     elevation: 5,
   },
   cardFront: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   cardBack: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   cardEmoji: {
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   cardQuestion: {
-    color: '#4ECDC4',
-    fontWeight: 'bold',
+    color: "#4ECDC4",
+    fontWeight: "bold",
   },
   completionContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   completionEmoji: {
     fontSize: 80,
@@ -233,12 +304,12 @@ const styles = StyleSheet.create({
   },
   completionText: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#FFF',
+    fontWeight: "bold",
+    color: "#FFF",
     marginBottom: 10,
   },
   completionSubtext: {
     fontSize: 18,
-    color: '#AAA',
+    color: "#AAA",
   },
 });
