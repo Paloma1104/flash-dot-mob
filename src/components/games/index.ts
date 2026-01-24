@@ -1,0 +1,10 @@
+export { SudokuGame } from './SudokuGame';
+export { MemoryMatchGame } from './MemoryMatchGame';
+export { Puzzle2048Game } from './Puzzle2048Game';
+export { TicTacToeGame } from './TicTacToeGame';
+export { ColorSequenceGame } from './ColorSequenceGame';
+export { WordScrambleGame } from './WordScrambleGame';
+export { MathChallengeGame } from './MathChallengeGame';
+export { PatternLockGame } from './PatternLockGame';
+export { SimonSaysGame } from './SimonSaysGame';
+export { SpotDifferenceGame } from './SpotDifferenceGame';
