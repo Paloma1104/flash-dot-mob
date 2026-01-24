@@ -522,7 +522,9 @@ export function useWallet(): UseWalletReturn {
               eip155Accounts.forEach((acc: string) => {
                 const parts = acc.split(":");
                 const address = parts[parts.length - 1];
-                uniqueAddresses.add(address);
+                if (address) {
+                  uniqueAddresses.add(address);
+                }
               });
               providerAccounts = Array.from(uniqueAddresses);
               console.log(
@@ -657,7 +659,7 @@ export function useWallet(): UseWalletReturn {
                   {
                     text: "Open MetaMask",
                     onPress: () =>
-                      Linking.openURL("metamask://").catch(() => { }),
+                      Linking.openURL("metamask://").catch(() => {}),
                   },
                   { text: "Waiting...", style: "cancel" },
                 ],
@@ -812,10 +814,10 @@ async function switchToCorrectNetwork(
         console.error("❌ Cannot add Anvil local network to MetaMask mobile");
         throw new Error(
           "MetaMask mobile cannot connect to localhost.\n\n" +
-          "Solutions:\n" +
-          "1. Use MetaMask browser extension instead\n" +
-          "2. Deploy contracts to Monad testnet\n" +
-          "3. Expose Anvil via ngrok and use that URL",
+            "Solutions:\n" +
+            "1. Use MetaMask browser extension instead\n" +
+            "2. Deploy contracts to Monad testnet\n" +
+            "3. Expose Anvil via ngrok and use that URL",
         );
       }
 
@@ -891,4 +893,3 @@ async function switchToCorrectNetwork(
     }
   }
 }
-

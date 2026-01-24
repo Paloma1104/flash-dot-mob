@@ -72,6 +72,7 @@ export function MultiplayerLobby({
       pulse.start();
       return () => pulse.stop();
     }
+    return undefined;
   }, [isJoined, countdown]);
 
   // Countdown when enough players join
@@ -98,6 +99,7 @@ export function MultiplayerLobby({
         onGameStart(randomGame);
       }
     }
+    return undefined;
   }, [countdown]);
 
   const handleJoin = async () => {
@@ -495,4 +497,3 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
-

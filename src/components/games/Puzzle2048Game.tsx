@@ -33,7 +33,9 @@ export function Puzzle2048Game({
   onCancel,
 }: Puzzle2048GameProps) {
   const [grid, setGrid] = useState<number[][]>(
-    Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(0))
+    Array(GRID_SIZE)
+      .fill(null)
+      .map(() => Array(GRID_SIZE).fill(0)),
   );
   const [score, setScore] = useState(0);
   const [startTime] = useState(Date.now());
@@ -90,11 +92,14 @@ export function Puzzle2048Game({
     let newScore = score;
 
     for (let i = 0; i < GRID_SIZE; i++) {
-      const row = newGrid[i].filter((val) => val !== 0);
+      const gridRow = newGrid[i];
+      if (!gridRow) continue;
+      const row = gridRow.filter((val) => val !== 0);
 
       for (let j = 0; j < row.length - 1; j++) {
-        if (row[j] === row[j + 1]) {
-          const mergedValue = row[j] * 2;
+        const currentValue = row[j];
+        if (currentValue !== undefined && currentValue === row[j + 1]) {
+          const mergedValue = currentValue * 2;
           row[j] = mergedValue;
           newScore += mergedValue;
           row.splice(j + 1, 1);
@@ -105,7 +110,7 @@ export function Puzzle2048Game({
         row.push(0);
       }
 
-      if (row.join(",") !== newGrid[i].join(",")) {
+      if (row.join(",") !== gridRow.join(",")) {
         moved = true;
       }
 
@@ -150,12 +155,15 @@ export function Puzzle2048Game({
     let newScore = score;
 
     for (let i = 0; i < GRID_SIZE; i++) {
-      const row = newGrid[i].filter((val) => val !== 0);
+      const gridRow = newGrid[i];
+      if (!gridRow) continue;
+      const row = gridRow.filter((val) => val !== 0);
 
       for (let j = 0; j < row.length - 1; j++) {
-        if (row[j] === row[j + 1]) {
-          row[j] *= 2;
-          newScore += row[j];
+        const currentValue = row[j];
+        if (currentValue !== undefined && currentValue === row[j + 1]) {
+          row[j] = currentValue * 2;
+          newScore += row[j] ?? 0;
           row.splice(j + 1, 1);
         }
       }
@@ -164,7 +172,7 @@ export function Puzzle2048Game({
         row.push(0);
       }
 
-      if (row.join(",") !== newGrid[i].join(",")) {
+      if (row.join(",") !== gridRow.join(",")) {
         moved = true;
       }
 
@@ -211,17 +219,19 @@ export function Puzzle2048Game({
     let newScore = score;
 
     for (let j = 0; j < GRID_SIZE; j++) {
-      const column = [];
+      const column: number[] = [];
       for (let i = 0; i < GRID_SIZE; i++) {
-        if (newGrid[i][j] !== 0) {
-          column.push(newGrid[i][j]);
+        const cellValue = newGrid[i]?.[j];
+        if (cellValue !== undefined && cellValue !== 0) {
+          column.push(cellValue);
         }
       }
 
       for (let i = 0; i < column.length - 1; i++) {
-        if (column[i] === column[i + 1]) {
-          column[i] *= 2;
-          newScore += column[i];
+        const currentValue = column[i];
+        if (currentValue !== undefined && currentValue === column[i + 1]) {
+          column[i] = currentValue * 2;
+          newScore += column[i] ?? 0;
           column.splice(i + 1, 1);
         }
       }
@@ -231,10 +241,14 @@ export function Puzzle2048Game({
       }
 
       for (let i = 0; i < GRID_SIZE; i++) {
-        if (newGrid[i][j] !== column[i]) {
+        const gridRow = newGrid[i];
+        const colValue = column[i] ?? 0;
+        if (gridRow && gridRow[j] !== colValue) {
           moved = true;
         }
-        newGrid[i][j] = column[i];
+        if (gridRow) {
+          gridRow[j] = colValue;
+        }
       }
     }
 
@@ -278,17 +292,19 @@ export function Puzzle2048Game({
     let newScore = score;
 
     for (let j = 0; j < GRID_SIZE; j++) {
-      const column = [];
+      const column: number[] = [];
       for (let i = GRID_SIZE - 1; i >= 0; i--) {
-        if (newGrid[i][j] !== 0) {
-          column.push(newGrid[i][j]);
+        const cellValue = newGrid[i]?.[j];
+        if (cellValue !== undefined && cellValue !== 0) {
+          column.push(cellValue);
         }
       }
 
       for (let i = 0; i < column.length - 1; i++) {
-        if (column[i] === column[i + 1]) {
-          column[i] *= 2;
-          newScore += column[i];
+        const currentValue = column[i];
+        if (currentValue !== undefined && currentValue === column[i + 1]) {
+          column[i] = currentValue * 2;
+          newScore += column[i] ?? 0;
           column.splice(i + 1, 1);
         }
       }
@@ -298,10 +314,14 @@ export function Puzzle2048Game({
       }
 
       for (let i = 0; i < GRID_SIZE; i++) {
-        if (newGrid[GRID_SIZE - 1 - i][j] !== column[i]) {
+        const gridRow = newGrid[GRID_SIZE - 1 - i];
+        const colValue = column[i] ?? 0;
+        if (gridRow && gridRow[j] !== colValue) {
           moved = true;
         }
-        newGrid[GRID_SIZE - 1 - i][j] = column[i];
+        if (gridRow) {
+          gridRow[j] = colValue;
+        }
       }
     }
 
@@ -347,29 +367,36 @@ export function Puzzle2048Game({
   const checkGameOver = (currentGrid: number[][]) => {
     // Check if there are any empty cells
     for (let i = 0; i < GRID_SIZE; i++) {
+      const row = currentGrid[i];
+      if (!row) continue;
       for (let j = 0; j < GRID_SIZE; j++) {
-        if (currentGrid[i][j] === 0) return false;
+        if (row[j] === 0) return false;
       }
     }
 
     // Check if any adjacent cells can be merged (horizontal)
     for (let i = 0; i < GRID_SIZE; i++) {
+      const row = currentGrid[i];
+      if (!row) continue;
       for (let j = 0; j < GRID_SIZE - 1; j++) {
-        if (currentGrid[i][j] === currentGrid[i][j + 1]) return false;
+        if (row[j] === row[j + 1]) return false;
       }
     }
 
     // Check if any adjacent cells can be merged (vertical)
     for (let i = 0; i < GRID_SIZE - 1; i++) {
+      const row = currentGrid[i];
+      const nextRow = currentGrid[i + 1];
+      if (!row || !nextRow) continue;
       for (let j = 0; j < GRID_SIZE; j++) {
-        if (currentGrid[i][j] === currentGrid[i + 1][j]) return false;
+        if (row[j] === nextRow[j]) return false;
       }
     }
 
     return true; // No moves possible
   };
 
-  const getTileColor = (value: number) => {
+  const getTileColor = (value: number): [string, string] => {
     const colors: Record<number, [string, string]> = {
       0: ["#1A1A2E", "#16213E"],
       2: ["#FFD93D", "#F5C400"],
@@ -384,7 +411,7 @@ export function Puzzle2048Game({
       1024: ["#FCBAD3", "#F8A5C2"],
       2048: ["#FFD93D", "#FFC300"],
     };
-    return colors[value] || colors[2048];
+    return colors[value] ?? ["#FFD93D", "#FFC300"];
   };
 
   const animatedStyle = useAnimatedStyle(() => ({

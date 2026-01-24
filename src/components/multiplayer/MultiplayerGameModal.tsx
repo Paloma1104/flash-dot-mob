@@ -56,6 +56,7 @@ export function MultiplayerGameModal({
       const timer = setTimeout(() => setGameStarted(true), 1500);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [visible, session]);
 
   const handleScoreUpdate = useCallback((score: number) => {
@@ -410,4 +411,3 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 });
-

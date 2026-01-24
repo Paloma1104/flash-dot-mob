@@ -1,26 +1,44 @@
-import { LinearGradient } from 'expo-linear-gradient';
-import React, { useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View, Vibration } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  Vibration,
+  View,
+} from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 
 interface TicTacToeGameProps {
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: "easy" | "medium" | "hard";
   onComplete: (score: number, timeSpent?: number) => void;
   onCancel: () => void;
 }
 
-export function TicTacToeGame({ difficulty, onComplete, onCancel }: TicTacToeGameProps) {
-  const [board, setBoard] = useState<('X' | 'O' | null)[]>(Array(9).fill(null));
+export function TicTacToeGame({
+  difficulty,
+  onComplete,
+  onCancel,
+}: TicTacToeGameProps) {
+  const [board, setBoard] = useState<("X" | "O" | null)[]>(Array(9).fill(null));
   const [isPlayerTurn, setIsPlayerTurn] = useState(true);
   const [playerWins, setPlayerWins] = useState(0);
   const [aiWins, setAiWins] = useState(0);
   const [rounds, setRounds] = useState(0);
-  const [gameStatus, setGameStatus] = useState<'playing' | 'won' | 'lost' | 'draw'>('playing');
+  const [gameStatus, setGameStatus] = useState<
+    "playing" | "won" | "lost" | "draw"
+  >("playing");
   const [startTime] = useState(Date.now());
 
   const celebrationScale = useSharedValue(1);
 
-  const checkWinner = (currentBoard: typeof board): 'X' | 'O' | 'draw' | null => {
+  const checkWinner = (
+    currentBoard: typeof board,
+  ): "X" | "O" | "draw" | null => {
     const lines = [
       [0, 1, 2],
       [3, 4, 5],
@@ -32,38 +50,52 @@ export function TicTacToeGame({ difficulty, onComplete, onCancel }: TicTacToeGam
       [2, 4, 6],
     ];
 
-    for (const [a, b, c] of lines) {
-      if (currentBoard[a] && currentBoard[a] === currentBoard[b] && currentBoard[a] === currentBoard[c]) {
-        return currentBoard[a] as 'X' | 'O';
+    for (const line of lines) {
+      const a = line[0];
+      const b = line[1];
+      const c = line[2];
+      if (a === undefined || b === undefined || c === undefined) continue;
+      const cellA = currentBoard[a];
+      const cellB = currentBoard[b];
+      const cellC = currentBoard[c];
+      if (cellA && cellA === cellB && cellA === cellC) {
+        return cellA as "X" | "O";
       }
     }
 
-    return currentBoard.every((cell) => cell !== null) ? 'draw' : null;
+    return currentBoard.every((cell) => cell !== null) ? "draw" : null;
   };
 
   const getAIMove = (currentBoard: typeof board): number => {
-    const availableMoves = currentBoard.map((cell, idx) => (cell === null ? idx : null)).filter((idx) => idx !== null) as number[];
+    const availableMoves = currentBoard
+      .map((cell, idx) => (cell === null ? idx : null))
+      .filter((idx) => idx !== null) as number[];
 
-    if (difficulty === 'easy') {
-      return availableMoves[Math.floor(Math.random() * availableMoves.length)];
+    if (difficulty === "easy") {
+      const randomIdx = Math.floor(Math.random() * availableMoves.length);
+      return availableMoves[randomIdx] ?? 0;
     }
 
-    if (difficulty === 'medium' && Math.random() < 0.5) {
-      return availableMoves[Math.floor(Math.random() * availableMoves.length)];
+    if (difficulty === "medium" && Math.random() < 0.5) {
+      const randomIdx = Math.floor(Math.random() * availableMoves.length);
+      return availableMoves[randomIdx] ?? 0;
     }
 
     // Hard mode: Minimax algorithm
-    const minimax = (board: typeof currentBoard, isMaximizing: boolean): number => {
+    const minimax = (
+      board: typeof currentBoard,
+      isMaximizing: boolean,
+    ): number => {
       const winner = checkWinner(board);
-      if (winner === 'O') return 10;
-      if (winner === 'X') return -10;
-      if (winner === 'draw') return 0;
+      if (winner === "O") return 10;
+      if (winner === "X") return -10;
+      if (winner === "draw") return 0;
 
       if (isMaximizing) {
         let bestScore = -Infinity;
         for (let i = 0; i < 9; i++) {
           if (board[i] === null) {
-            board[i] = 'O';
+            board[i] = "O";
             const score = minimax(board, false);
             board[i] = null;
             bestScore = Math.max(score, bestScore);
@@ -74,7 +106,7 @@ export function TicTacToeGame({ difficulty, onComplete, onCancel }: TicTacToeGam
         let bestScore = Infinity;
         for (let i = 0; i < 9; i++) {
           if (board[i] === null) {
-            board[i] = 'X';
+            board[i] = "X";
             const score = minimax(board, true);
             board[i] = null;
             bestScore = Math.min(score, bestScore);
@@ -85,10 +117,10 @@ export function TicTacToeGame({ difficulty, onComplete, onCancel }: TicTacToeGam
     };
 
     let bestScore = -Infinity;
-    let bestMove = availableMoves[0];
+    let bestMove = availableMoves[0] ?? 0;
 
     for (const move of availableMoves) {
-      currentBoard[move] = 'O';
+      currentBoard[move] = "O";
       const score = minimax([...currentBoard], false);
       currentBoard[move] = null;
 
@@ -102,10 +134,11 @@ export function TicTacToeGame({ difficulty, onComplete, onCancel }: TicTacToeGam
   };
 
   const handleCellPress = (index: number) => {
-    if (board[index] !== null || !isPlayerTurn || gameStatus !== 'playing') return;
+    if (board[index] !== null || !isPlayerTurn || gameStatus !== "playing")
+      return;
 
     const newBoard = [...board];
-    newBoard[index] = 'X';
+    newBoard[index] = "X";
     setBoard(newBoard);
     Vibration.vibrate(10);
 
@@ -121,7 +154,7 @@ export function TicTacToeGame({ difficulty, onComplete, onCancel }: TicTacToeGam
   const makeAIMove = (currentBoard: typeof board) => {
     const aiMove = getAIMove(currentBoard);
     const newBoard = [...currentBoard];
-    newBoard[aiMove] = 'O';
+    newBoard[aiMove] = "O";
     setBoard(newBoard);
     Vibration.vibrate(10);
 
@@ -133,14 +166,17 @@ export function TicTacToeGame({ difficulty, onComplete, onCancel }: TicTacToeGam
     }
   };
 
-  const handleRoundEnd = (winner: 'X' | 'O' | 'draw', finalBoard: typeof board) => {
+  const handleRoundEnd = (
+    winner: "X" | "O" | "draw",
+    finalBoard: typeof board,
+  ) => {
     const newRounds = rounds + 1;
     setRounds(newRounds);
 
-    if (winner === 'X') {
+    if (winner === "X") {
       const newPlayerWins = playerWins + 1;
       setPlayerWins(newPlayerWins);
-      setGameStatus('won');
+      setGameStatus("won");
       Vibration.vibrate(20);
 
       if (newRounds >= 3) {
@@ -148,10 +184,10 @@ export function TicTacToeGame({ difficulty, onComplete, onCancel }: TicTacToeGam
       } else {
         setTimeout(resetBoard, 1500);
       }
-    } else if (winner === 'O') {
+    } else if (winner === "O") {
       const newAiWins = aiWins + 1;
       setAiWins(newAiWins);
-      setGameStatus('lost');
+      setGameStatus("lost");
       Vibration.vibrate([0, 50, 50, 50]);
 
       if (newRounds >= 3) {
@@ -160,7 +196,7 @@ export function TicTacToeGame({ difficulty, onComplete, onCancel }: TicTacToeGam
         setTimeout(resetBoard, 1500);
       }
     } else {
-      setGameStatus('draw');
+      setGameStatus("draw");
       if (newRounds >= 3) {
         finishGame(playerWins, aiWins);
       } else {
@@ -171,7 +207,7 @@ export function TicTacToeGame({ difficulty, onComplete, onCancel }: TicTacToeGam
 
   const resetBoard = () => {
     setBoard(Array(9).fill(null));
-    setGameStatus('playing');
+    setGameStatus("playing");
     setIsPlayerTurn(true);
   };
 
@@ -196,7 +232,7 @@ export function TicTacToeGame({ difficulty, onComplete, onCancel }: TicTacToeGam
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#C77DFF', '#9D4EDD']} style={styles.header}>
+      <LinearGradient colors={["#C77DFF", "#9D4EDD"]} style={styles.header}>
         <TouchableOpacity onPress={onCancel} style={styles.closeButton}>
           <Text style={styles.closeText}>✕</Text>
         </TouchableOpacity>
@@ -210,8 +246,12 @@ export function TicTacToeGame({ difficulty, onComplete, onCancel }: TicTacToeGam
 
       {isGameOver ? (
         <Animated.View style={[styles.completionContainer, animatedStyle]}>
-          <Text style={styles.completionEmoji}>{playerWins > aiWins ? '🎉' : '😢'}</Text>
-          <Text style={styles.completionText}>{playerWins > aiWins ? 'You Won!' : 'AI Won!'}</Text>
+          <Text style={styles.completionEmoji}>
+            {playerWins > aiWins ? "🎉" : "😢"}
+          </Text>
+          <Text style={styles.completionText}>
+            {playerWins > aiWins ? "You Won!" : "AI Won!"}
+          </Text>
           <Text style={styles.completionSubtext}>Calculating rewards...</Text>
         </Animated.View>
       ) : (
@@ -224,24 +264,38 @@ export function TicTacToeGame({ difficulty, onComplete, onCancel }: TicTacToeGam
                 onPress={() => handleCellPress(index)}
                 disabled={!isPlayerTurn || cell !== null}
               >
-                <LinearGradient colors={cell ? ['#C77DFF', '#9D4EDD'] : ['#1A1A2E', '#16213E']} style={styles.cellGradient}>
-                  <Text style={[styles.cellText, { color: cell === 'X' ? '#06FFA5' : '#FFD93D' }]}>{cell || ''}</Text>
+                <LinearGradient
+                  colors={
+                    cell ? ["#C77DFF", "#9D4EDD"] : ["#1A1A2E", "#16213E"]
+                  }
+                  style={styles.cellGradient}
+                >
+                  <Text
+                    style={[
+                      styles.cellText,
+                      { color: cell === "X" ? "#06FFA5" : "#FFD93D" },
+                    ]}
+                  >
+                    {cell || ""}
+                  </Text>
                 </LinearGradient>
               </TouchableOpacity>
             ))}
           </View>
 
-          {gameStatus !== 'playing' && (
+          {gameStatus !== "playing" && (
             <View style={styles.statusBadge}>
               <Text style={styles.statusText}>
-                {gameStatus === 'won' && '🎉 You won this round!'}
-                {gameStatus === 'lost' && '😢 AI won this round'}
-                {gameStatus === 'draw' && '🤝 Draw!'}
+                {gameStatus === "won" && "🎉 You won this round!"}
+                {gameStatus === "lost" && "😢 AI won this round"}
+                {gameStatus === "draw" && "🤝 Draw!"}
               </Text>
             </View>
           )}
 
-          <Text style={styles.turnText}>{isPlayerTurn ? "Your Turn (X)" : "AI's Turn (O)"}</Text>
+          <Text style={styles.turnText}>
+            {isPlayerTurn ? "Your Turn (X)" : "AI's Turn (O)"}
+          </Text>
         </View>
       )}
     </View>
@@ -251,7 +305,7 @@ export function TicTacToeGame({ difficulty, onComplete, onCancel }: TicTacToeGam
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D0D0F',
+    backgroundColor: "#0D0D0F",
   },
   header: {
     padding: 20,
@@ -259,90 +313,90 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
     elevation: 10,
-    shadowColor: '#C77DFF',
+    shadowColor: "#C77DFF",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.5,
     shadowRadius: 20,
   },
   closeButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 40,
     right: 20,
     zIndex: 10,
   },
   closeText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFF',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#FFF",
+    textAlign: "center",
     marginBottom: 10,
   },
   stats: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   statText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 16,
     opacity: 0.9,
   },
   gameContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
   board: {
     width: 320,
     height: 320,
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
   },
   cell: {
-    width: '31%',
+    width: "31%",
     aspectRatio: 1,
     borderRadius: 15,
-    overflow: 'hidden',
+    overflow: "hidden",
     elevation: 5,
   },
   cellGradient: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   cellText: {
     fontSize: 48,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   turnText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 20,
     marginTop: 30,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   statusBadge: {
     marginTop: 20,
     paddingHorizontal: 20,
     paddingVertical: 10,
-    backgroundColor: 'rgba(199, 125, 255, 0.2)',
+    backgroundColor: "rgba(199, 125, 255, 0.2)",
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: '#C77DFF',
+    borderColor: "#C77DFF",
   },
   statusText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   completionContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   completionEmoji: {
     fontSize: 80,
@@ -350,12 +404,12 @@ const styles = StyleSheet.create({
   },
   completionText: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#FFF',
+    fontWeight: "bold",
+    color: "#FFF",
     marginBottom: 10,
   },
   completionSubtext: {
     fontSize: 18,
-    color: '#AAA',
+    color: "#AAA",
   },
 });

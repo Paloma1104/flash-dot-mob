@@ -1,25 +1,68 @@
-import { LinearGradient } from 'expo-linear-gradient';
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View, Vibration } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { LinearGradient } from "expo-linear-gradient";
+import React, { useEffect, useState } from "react";
+import {
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  Vibration,
+  View,
+} from "react-native";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from "react-native-reanimated";
 
 interface WordScrambleGameProps {
-  difficulty: 'easy' | 'medium' | 'hard';
+  difficulty: "easy" | "medium" | "hard";
   onComplete: (score: number, timeSpent?: number) => void;
   onCancel: () => void;
 }
 
 const WORDS = {
-  easy: ['FLASH', 'MONAD', 'CRYPTO', 'BLOCKCHAIN', 'TOKEN', 'WALLET', 'COINS', 'TRADE', 'STAKE', 'GAME'],
-  medium: ['ETHEREUM', 'BITCOIN', 'SOLIDITY', 'DECENTRALIZED', 'PROTOCOL', 'NETWORK', 'VALIDATOR', 'CONSENSUS'],
-  hard: ['CRYPTOCURRENCY', 'TRANSACTION', 'DISTRIBUTED', 'IMMUTABLE', 'TOKENOMICS', 'GOVERNANCE', 'INTEROPERABILITY'],
+  easy: [
+    "FLASH",
+    "MONAD",
+    "CRYPTO",
+    "BLOCKCHAIN",
+    "TOKEN",
+    "WALLET",
+    "COINS",
+    "TRADE",
+    "STAKE",
+    "GAME",
+  ],
+  medium: [
+    "ETHEREUM",
+    "BITCOIN",
+    "SOLIDITY",
+    "DECENTRALIZED",
+    "PROTOCOL",
+    "NETWORK",
+    "VALIDATOR",
+    "CONSENSUS",
+  ],
+  hard: [
+    "CRYPTOCURRENCY",
+    "TRANSACTION",
+    "DISTRIBUTED",
+    "IMMUTABLE",
+    "TOKENOMICS",
+    "GOVERNANCE",
+    "INTEROPERABILITY",
+  ],
 };
 
-export function WordScrambleGame({ difficulty, onComplete, onCancel }: WordScrambleGameProps) {
+export function WordScrambleGame({
+  difficulty,
+  onComplete,
+  onCancel,
+}: WordScrambleGameProps) {
   const [words, setWords] = useState<string[]>([]);
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [scrambledWord, setScrambledWord] = useState('');
-  const [userInput, setUserInput] = useState('');
+  const [scrambledWord, setScrambledWord] = useState("");
+  const [userInput, setUserInput] = useState("");
   const [score, setScore] = useState(0);
   const [mistakes, setMistakes] = useState(0);
   const [startTime] = useState(Date.now());
@@ -29,25 +72,36 @@ export function WordScrambleGame({ difficulty, onComplete, onCancel }: WordScram
   const shakeOffset = useSharedValue(0);
 
   useEffect(() => {
-    const selectedWords = WORDS[difficulty].sort(() => Math.random() - 0.5).slice(0, 5);
+    const selectedWords = WORDS[difficulty]
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 5);
     setWords(selectedWords);
-    setScrambledWord(scrambleWord(selectedWords[0]));
+    const firstWord = selectedWords[0];
+    if (firstWord) {
+      setScrambledWord(scrambleWord(firstWord));
+    }
   }, []);
 
   const scrambleWord = (word: string): string => {
-    const arr = word.split('');
+    const arr = word.split("");
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [arr[i], arr[j]] = [arr[j], arr[i]];
+      const temp = arr[i];
+      const swap = arr[j];
+      if (temp !== undefined && swap !== undefined) {
+        arr[i] = swap;
+        arr[j] = temp;
+      }
     }
-    return arr.join('');
+    return arr.join("");
   };
 
   const handleSubmit = () => {
     if (isComplete) return;
     if (!userInput.trim()) return;
 
-    if (userInput.toUpperCase() === words[currentWordIndex]) {
+    const currentWord = words[currentWordIndex];
+    if (userInput.toUpperCase() === currentWord) {
       setScore(score + 200);
       Vibration.vibrate(20);
       celebrationScale.value = withSpring(1.1, {}, () => {
@@ -57,14 +111,18 @@ export function WordScrambleGame({ difficulty, onComplete, onCancel }: WordScram
       if (currentWordIndex === words.length - 1) {
         setIsComplete(true);
         const timeSpent = Math.floor((Date.now() - startTime) / 1000);
-        const finalScore = score + 200 + Math.max(0, 1000 - mistakes * 50 - timeSpent);
+        const finalScore =
+          score + 200 + Math.max(0, 1000 - mistakes * 50 - timeSpent);
         setTimeout(() => onComplete(finalScore, timeSpent), 1500);
       } else {
         setTimeout(() => {
           const nextIndex = currentWordIndex + 1;
           setCurrentWordIndex(nextIndex);
-          setScrambledWord(scrambleWord(words[nextIndex]));
-          setUserInput('');
+          const nextWord = words[nextIndex];
+          if (nextWord) {
+            setScrambledWord(scrambleWord(nextWord));
+          }
+          setUserInput("");
         }, 500);
       }
     } else {
@@ -76,7 +134,7 @@ export function WordScrambleGame({ difficulty, onComplete, onCancel }: WordScram
           shakeOffset.value = withSpring(0);
         });
       });
-      
+
       // Game over if too many mistakes
       if (newMistakes >= 3) {
         setIsComplete(true);
@@ -88,6 +146,7 @@ export function WordScrambleGame({ difficulty, onComplete, onCancel }: WordScram
 
   const handleHint = () => {
     const correctWord = words[currentWordIndex];
+    if (!correctWord) return;
     const revealedLength = Math.ceil(correctWord.length / 3);
     setUserInput(correctWord.substring(0, revealedLength));
     setMistakes(mistakes + 1);
@@ -103,14 +162,15 @@ export function WordScrambleGame({ difficulty, onComplete, onCancel }: WordScram
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={['#FF8B94', '#F67280']} style={styles.header}>
+      <LinearGradient colors={["#FF8B94", "#F67280"]} style={styles.header}>
         <TouchableOpacity onPress={onCancel} style={styles.closeButton}>
           <Text style={styles.closeText}>✕</Text>
         </TouchableOpacity>
         <Text style={styles.title}>📝 Word Scramble</Text>
         <View style={styles.stats}>
           <Text style={styles.statText}>
-            Word {currentWordIndex + 1}/{words.length} | Score: {score} | Mistakes: {mistakes}/3
+            Word {currentWordIndex + 1}/{words.length} | Score: {score} |
+            Mistakes: {mistakes}/3
           </Text>
         </View>
       </LinearGradient>
@@ -146,13 +206,22 @@ export function WordScrambleGame({ difficulty, onComplete, onCancel }: WordScram
 
           <View style={styles.buttons}>
             <TouchableOpacity style={styles.hintButton} onPress={handleHint}>
-              <LinearGradient colors={['#FFD93D', '#F5C400']} style={styles.buttonGradient}>
+              <LinearGradient
+                colors={["#FFD93D", "#F5C400"]}
+                style={styles.buttonGradient}
+              >
                 <Text style={styles.hintButtonText}>💡 Hint (-50)</Text>
               </LinearGradient>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-              <LinearGradient colors={['#06FFA5', '#00C9A7']} style={styles.buttonGradient}>
+            <TouchableOpacity
+              style={styles.submitButton}
+              onPress={handleSubmit}
+            >
+              <LinearGradient
+                colors={["#06FFA5", "#00C9A7"]}
+                style={styles.buttonGradient}
+              >
                 <Text style={styles.submitButtonText}>✓ Submit</Text>
               </LinearGradient>
             </TouchableOpacity>
@@ -167,7 +236,12 @@ export function WordScrambleGame({ difficulty, onComplete, onCancel }: WordScram
                   style={[
                     styles.progressDot,
                     {
-                      backgroundColor: index < currentWordIndex ? '#06FFA5' : index === currentWordIndex ? '#FFD93D' : '#1A1A2E',
+                      backgroundColor:
+                        index < currentWordIndex
+                          ? "#06FFA5"
+                          : index === currentWordIndex
+                            ? "#FFD93D"
+                            : "#1A1A2E",
                     },
                   ]}
                 />
@@ -183,7 +257,7 @@ export function WordScrambleGame({ difficulty, onComplete, onCancel }: WordScram
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0D0D0F',
+    backgroundColor: "#0D0D0F",
   },
   header: {
     padding: 20,
@@ -191,123 +265,123 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 30,
     borderBottomRightRadius: 30,
     elevation: 10,
-    shadowColor: '#FF8B94',
+    shadowColor: "#FF8B94",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.5,
     shadowRadius: 20,
   },
   closeButton: {
-    position: 'absolute',
+    position: "absolute",
     top: 40,
     right: 20,
     zIndex: 10,
   },
   closeText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 28,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   title: {
     fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FFF',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#FFF",
+    textAlign: "center",
     marginBottom: 10,
   },
   stats: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   statText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 16,
     opacity: 0.9,
   },
   gameContainer: {
     flex: 1,
     padding: 30,
-    justifyContent: 'space-around',
+    justifyContent: "space-around",
   },
   wordContainer: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   label: {
-    color: '#AAA',
+    color: "#AAA",
     fontSize: 16,
     marginBottom: 15,
   },
   scrambledContainer: {
-    backgroundColor: '#1A1A2E',
+    backgroundColor: "#1A1A2E",
     padding: 20,
     borderRadius: 15,
     borderWidth: 2,
-    borderColor: '#FF8B94',
+    borderColor: "#FF8B94",
     elevation: 5,
   },
   scrambledText: {
-    color: '#FFF',
+    color: "#FFF",
     fontSize: 36,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     letterSpacing: 8,
   },
   inputContainer: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   input: {
-    width: '100%',
-    backgroundColor: '#1A1A2E',
-    color: '#FFF',
+    width: "100%",
+    backgroundColor: "#1A1A2E",
+    color: "#FFF",
     fontSize: 24,
     padding: 20,
     borderRadius: 15,
     borderWidth: 2,
-    borderColor: '#06FFA5',
-    textAlign: 'center',
-    fontWeight: '600',
+    borderColor: "#06FFA5",
+    textAlign: "center",
+    fontWeight: "600",
     letterSpacing: 2,
   },
   buttons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 15,
   },
   hintButton: {
     flex: 1,
     height: 60,
     borderRadius: 30,
-    overflow: 'hidden',
+    overflow: "hidden",
     elevation: 5,
   },
   submitButton: {
     flex: 1,
     height: 60,
     borderRadius: 30,
-    overflow: 'hidden',
+    overflow: "hidden",
     elevation: 5,
   },
   buttonGradient: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   hintButtonText: {
-    color: '#000',
+    color: "#000",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   submitButtonText: {
-    color: '#000',
+    color: "#000",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   progressContainer: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   progressLabel: {
-    color: '#AAA',
+    color: "#AAA",
     fontSize: 14,
     marginBottom: 10,
   },
   progressBar: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 10,
   },
   progressDot: {
@@ -317,8 +391,8 @@ const styles = StyleSheet.create({
   },
   completionContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   completionEmoji: {
     fontSize: 80,
@@ -326,12 +400,12 @@ const styles = StyleSheet.create({
   },
   completionText: {
     fontSize: 32,
-    fontWeight: 'bold',
-    color: '#FFF',
+    fontWeight: "bold",
+    color: "#FFF",
     marginBottom: 10,
   },
   completionSubtext: {
     fontSize: 18,
-    color: '#AAA',
+    color: "#AAA",
   },
 });
