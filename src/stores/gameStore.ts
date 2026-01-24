@@ -7,6 +7,7 @@ import {
   setCachedGames,
 } from "../services/gameCache";
 import type { GameDrop, GameSession, GameStats, GameType } from "../types/game";
+import { useLeaderboardStore } from "./leaderboardStore";
 import { usePendingTransactionStore } from "./pendingTransactionStore";
 import { useUserStore } from "./userStore";
 
@@ -157,6 +158,21 @@ export const useGameStore = create<GameState>()(
           });
           console.log(`🏆 Reward queued: ${rewardEarned} AP (claim later)`);
         }
+
+        // Update leaderboard rankings
+        const leaderboardStore = useLeaderboardStore.getState();
+        const updatedStats = get().gameStats;
+        const userStore = useUserStore.getState();
+
+        leaderboardStore.updateUserStats({
+          walletAddress: userStore.walletAddress || "unknown",
+          totalEarnings: updatedStats.totalRewards,
+          gamesPlayed: updatedStats.gamesPlayed,
+          gamesWon: updatedStats.gamesWon,
+        });
+        console.log(
+          `📊 Leaderboard updated: ${updatedStats.gamesWon}/${updatedStats.gamesPlayed} games won`,
+        );
       },
 
       cancelGame: () => {

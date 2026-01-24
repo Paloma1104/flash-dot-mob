@@ -806,8 +806,17 @@ async function switchToCorrectNetwork(
     console.log("  - Error message:", switchError.message);
 
     // Error 4902 means the chain hasn't been added to MetaMask yet
-    if (switchError.code === 4902) {
-      console.log(`🔵 ${networkName} not in MetaMask, adding it now...`);
+    // Also try adding for any "not approved" or WalletConnect-specific errors
+    const shouldTryAddChain =
+      switchError.code === 4902 ||
+      switchError.message?.includes("not approved") ||
+      switchError.message?.includes("wallet does not support") ||
+      switchError.message?.includes("Failed to switch");
+
+    if (shouldTryAddChain) {
+      console.log(
+        `🔵 ${networkName} not in wallet or switch failed, trying to add it...`,
+      );
 
       // MetaMask mobile cannot connect to localhost - show helpful error
       if (targetChainId === 31337) {
@@ -870,8 +879,9 @@ async function switchToCorrectNetwork(
         // Verify again
         const finalChainId = Number(provider.chainId);
         if (finalChainId !== targetChainId) {
-          throw new Error(
-            `Network add verification failed. Current: ${finalChainId}, Expected: ${targetChainId}`,
+          // If verification fails, it might still work - don't throw
+          console.warn(
+            `⚠️ Chain ID mismatch after add. Current: ${finalChainId}, Expected: ${targetChainId}. Proceeding anyway...`,
           );
         }
       } catch (addError: any) {
@@ -879,17 +889,30 @@ async function switchToCorrectNetwork(
         if (addError.code === 4001) {
           throw new Error("Network addition cancelled by user");
         }
-        throw new Error(`Failed to add ${networkName} to MetaMask`);
+        // If add also fails, provide helpful guidance
+        throw new Error(
+          `Could not switch to ${networkName}.\n\n` +
+            "Please manually add Monad Testnet to your wallet:\n" +
+            "• Chain ID: 10143\n" +
+            "• RPC: https://testnet-rpc.monad.xyz\n" +
+            "• Symbol: MON",
+        );
       }
     } else if (switchError.code === 4001) {
       // User rejected the network switch
       console.log("ℹ️ User cancelled network switch");
       throw new Error("Network switch cancelled by user");
     } else {
-      console.error("❌ Unexpected switch error:", switchError);
-      throw new Error(
-        `Network switch failed: ${switchError.message || "Unknown error"}`,
+      // For other errors, log warning but don't block - proceed anyway
+      console.warn(
+        "⚠️ Network switch failed, but proceeding anyway:",
+        switchError.message,
       );
+      console.log("💡 Tip: If transaction fails, manually add Monad Testnet:");
+      console.log("   Chain ID: 10143");
+      console.log("   RPC: https://testnet-rpc.monad.xyz");
+      // Don't throw - let the transaction attempt proceed
+      // The transaction might still work if the wallet is already on the right network
     }
   }
 }

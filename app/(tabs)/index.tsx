@@ -15,6 +15,7 @@ import {
   MultiplayerGameModal,
   MultiplayerLobby,
 } from "@/components/multiplayer";
+import { GamesCounterBadge } from "@/components/ui/GamesCounterBadge";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { RadarPulse } from "@/components/ui/RadarPulse";
 import { BalanceDisplay } from "@/components/wallet/BalanceDisplay";
@@ -542,20 +543,13 @@ export default function MapScreen() {
         rightContent={<BalanceDisplay variant="compact" />}
       />
 
-      {/* Nearby Games Counter */}
-      {nearbyGameDrops.length > 0 && (
-        <View style={styles.distanceIndicator}>
-          <GlassCard style={styles.distanceCard} intensity={40}>
-            <AppIcon name="game" size={20} color={COLORS.primary} />
-            <View style={{ marginLeft: SPACING.sm }}>
-              <Text style={styles.distanceText}>
-                {nearbyGameDrops.length} Games
-              </Text>
-              <Text style={styles.distanceLabel}>nearby to play</Text>
-            </View>
-          </GlassCard>
-        </View>
-      )}
+      {/* Nearby Games Counter - Premium Badge */}
+      <GamesCounterBadge
+        count={nearbyGameDrops.length}
+        onPress={() => {
+          // Could open a game list modal
+        }}
+      />
 
       <GameModal
         visible={gameModalVisible}
