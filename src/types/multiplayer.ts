@@ -58,15 +58,15 @@ export interface MultiplayerGameResult {
   signature?: string;
 }
 
-// LNMIIT Campus Station - Pre-defined
+// LNMIIT Campus Station - The LNM Institute of Information Technology, Jaipur
 export const LNMIIT_MULTIPLAYER_STATION: Omit<
   MultiplayerStation,
   "currentPlayers" | "status"
 > = {
   id: "lnmiit-arena-001",
-  name: "LNMIIT Arena",
-  latitude: 26.8947,
-  longitude: 75.8133,
+  name: "LNMIIT Gaming Arena",
+  latitude: 26.9363,
+  longitude: 75.9235,
   stakeAmount: 50,
   minPlayers: 2,
   maxPlayers: 4,

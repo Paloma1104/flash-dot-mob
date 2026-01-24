@@ -363,8 +363,10 @@ const stationStates: Map<string, StationState> = new Map();
 const connectedClients: Map<string, any> = new Map(); // WebSocket clients
 
 // Initialize LNMIIT Arena (live station - not mock)
+// The LNM Institute of Information Technology, Jaipur
+// Coordinates: 26.9363° N, 75.9235° E
 const LNMIIT_STATION_ID =
-  "0x" + ethers.id("LNMIIT Arena|26894700|75813300").slice(2, 66);
+  "0x" + ethers.id("LNMIIT Arena|26936300|75923500").slice(2, 66);
 stationStates.set(LNMIIT_STATION_ID, {
   stationId: LNMIIT_STATION_ID,
   players: [],
@@ -387,9 +389,10 @@ app.get("/api/stations/nearby", (req: Request, res: Response) => {
     stations: [
       {
         id: LNMIIT_STATION_ID,
-        name: "LNMIIT Arena",
-        latitude: 26.8947,
-        longitude: 75.8133,
+        name: "LNMIIT Gaming Arena",
+        description: "The LNM Institute of Information Technology",
+        latitude: 26.9363,
+        longitude: 75.9235,
         stakeAmount: 50,
         minPlayers: 2,
         maxPlayers: 4,

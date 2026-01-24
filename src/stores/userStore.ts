@@ -44,7 +44,7 @@ interface UserState {
 
   // AP Token (Activity Points) - NEW
   apBalance: number; // AP token balance
-  hasClaimedInitialAP: boolean; // Track if user claimed 1000 AP airdrop
+  hasClaimedInitialAP: boolean; // Track if user claimed 5000 AP welcome bonus
 
   // History & Stats
   history: Transaction[];
@@ -197,7 +197,17 @@ export const useUserStore = create<UserState>()(
 
       // Actions
       setAuthenticated: (isAuth, walletAddress) =>
-        set({ isAuthenticated: isAuth, walletAddress: walletAddress ?? null }),
+        set((state) => {
+          // Grant 5000 AP to new users on first wallet connection
+          const isNewUser = isAuth && !state.hasClaimedInitialAP;
+          return {
+            isAuthenticated: isAuth,
+            walletAddress: walletAddress ?? null,
+            // Give new users 5000 AP tokens as welcome bonus
+            apBalance: isNewUser ? 5000 : state.apBalance,
+            hasClaimedInitialAP: isAuth ? true : state.hasClaimedInitialAP,
+          };
+        }),
 
       setBalance: (balance) => set({ balance }),
 

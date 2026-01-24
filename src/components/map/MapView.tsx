@@ -103,8 +103,11 @@ export function FlashMobMapView({
     })();
   }, []);
 
-  // Loading state
-  if (locationPermission === null) {
+  // Loading state - wait for location before showing map
+  if (
+    locationPermission === null ||
+    (locationPermission && !currentUserLocation)
+  ) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color="#836EF9" />
@@ -123,18 +126,21 @@ export function FlashMobMapView({
     );
   }
 
+  // Use user's location for initial region, fallback to LNMIIT if somehow null
+  const initialRegion = {
+    latitude: currentUserLocation?.latitude ?? 26.9363,
+    longitude: currentUserLocation?.longitude ?? 75.9235,
+    latitudeDelta: 0.01,
+    longitudeDelta: 0.01,
+  };
+
   return (
     <View style={styles.container}>
       <MapView
         ref={mapRef}
         provider={PROVIDER_GOOGLE}
         style={styles.map}
-        initialRegion={{
-          latitude: 28.6139,
-          longitude: 77.209,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01,
-        }}
+        initialRegion={initialRegion}
         showsUserLocation={true}
         showsMyLocationButton={true}
         showsCompass={true}
