@@ -29,6 +29,33 @@ import {
   getNearbyGameDrops,
 } from "@/utils/gameDropGenerator";
 
+// Theme colors
+const COLORS = {
+  primary: "#836EF9",
+  textSecondary: "rgba(255, 255, 255, 0.6)",
+  textQuaternary: "rgba(255, 255, 255, 0.4)",
+};
+
+// Simple icon component placeholder
+function AppIcon({
+  name,
+  size,
+  color,
+}: {
+  name: string;
+  size: number;
+  color: string;
+}) {
+  const icons: Record<string, string> = {
+    location: "📍",
+    game: "🎮",
+    wallet: "💰",
+    trophy: "🏆",
+    lock: "🔒",
+  };
+  return <Text style={{ fontSize: size, color }}>{icons[name] || "•"}</Text>;
+}
+
 // Check if Mapbox is available (requires native build)
 let FlashMobMapView: React.ComponentType<any> | null = null;
 let mapboxAvailable = false;
@@ -205,23 +232,32 @@ export default function MapScreen() {
         <SafeAreaView style={styles.centerContainer}>
           <GlassCard style={styles.permissionCard} intensity={40}>
             <View style={styles.monadBadge}>
-              <Text style={styles.monadText}>⚡ POWERED BY MONAD</Text>
+              <Text style={styles.monadText}>POWERED BY MONAD</Text>
             </View>
             <View style={styles.iconContainer}>
-              <Text style={{ fontSize: 48 }}>🎮</Text>
+              <AppIcon name="location" size={48} color={COLORS.primary} />
             </View>
             <Text style={styles.permissionTitle}>Welcome to Flash.Mob</Text>
             <Text style={styles.permissionSubtitle}>
-              🎮 Play Games, Earn Crypto
+              Play Games, Earn Crypto
             </Text>
             <Text style={styles.permissionText}>
               Discover mini-games at real locations. Walk, explore, play games
               and earn AP tokens. Collect MON testnet tokens in your wallet!
             </Text>
             <View style={styles.featureList}>
-              <Text style={styles.featureItem}>🎯 10 Unique Mini-Games</Text>
-              <Text style={styles.featureItem}>💰 Earn MON Tokens</Text>
-              <Text style={styles.featureItem}>🏆 Compete on Leaderboards</Text>
+              <View style={styles.featureRow}>
+                <AppIcon name="game" size={16} color={COLORS.textSecondary} />
+                <Text style={styles.featureItem}>10 Unique Mini-Games</Text>
+              </View>
+              <View style={styles.featureRow}>
+                <AppIcon name="wallet" size={16} color={COLORS.textSecondary} />
+                <Text style={styles.featureItem}>Earn MON Tokens</Text>
+              </View>
+              <View style={styles.featureRow}>
+                <AppIcon name="trophy" size={16} color={COLORS.textSecondary} />
+                <Text style={styles.featureItem}>Compete on Leaderboards</Text>
+              </View>
             </View>
             <TouchableOpacity
               style={styles.primaryButton}
@@ -229,9 +265,12 @@ export default function MapScreen() {
             >
               <Text style={styles.primaryButtonText}>Start Playing</Text>
             </TouchableOpacity>
-            <Text style={styles.privacyNote}>
-              We only use your location to find nearby games
-            </Text>
+            <View style={styles.privacyRow}>
+              <AppIcon name="lock" size={12} color={COLORS.textQuaternary} />
+              <Text style={styles.privacyNote}>
+                We only use your location to find nearby games
+              </Text>
+            </View>
           </GlassCard>
         </SafeAreaView>
       </View>
@@ -250,21 +289,28 @@ export default function MapScreen() {
 
         <View style={styles.gridOverlay} />
 
-        <SafeAreaView style={styles.safeArea}>
-          {/* Compact Header */}
-          <View style={styles.header}>
+        {/* Compact Header */}
+        <CompactHeader
+          leftContent={
             <View>
-              <Text style={styles.appName}>⚡ FLASH.MOB</Text>
-              <Text style={styles.appStatus}>MONAD • SCANNING...</Text>
+              <Text style={styles.appName}>FLASH.MOB</Text>
+              <Text style={styles.appStatus}>SCANNING...</Text>
             </View>
-            <BalanceDisplay variant="compact" />
-          </View>
+          }
+          rightContent={<BalanceDisplay variant="compact" />}
+        />
 
+        <SafeAreaView style={styles.safeArea} edges={["bottom"]}>
           {/* Radar Scanner */}
-          <View style={styles.scannerContainer}>
+          <View
+            style={[
+              styles.scannerContainer,
+              { marginTop: LAYOUT.headerHeight },
+            ]}
+          >
             <RadarPulse />
             <View style={styles.monadScanBadge}>
-              <Text style={styles.monadScanText}>⚡ MONAD NETWORK</Text>
+              <Text style={styles.monadScanText}>MONAD NETWORK</Text>
             </View>
             <Text style={styles.scannerText}>
               {location
@@ -281,7 +327,7 @@ export default function MapScreen() {
           {/* Nearby Games List */}
           <View style={styles.bottomSheet}>
             <Text style={styles.sectionTitle}>
-              🎮 NEARBY GAMES ({nearbyGameDrops.length})
+              NEARBY GAMES ({nearbyGameDrops.length})
             </Text>
             <ScrollView
               style={styles.dropsList}
@@ -311,7 +357,7 @@ export default function MapScreen() {
                       <View style={styles.gameDetails}>
                         <Text style={styles.gameName}>{config.name}</Text>
                         <Text style={styles.gameReward}>
-                          🪙 {gameDrop.rewardAmount} AP
+                          {gameDrop.rewardAmount} AP
                         </Text>
                         <View style={styles.difficultyBadge}>
                           <Text
@@ -332,7 +378,11 @@ export default function MapScreen() {
                         </View>
                       </View>
                       <View style={styles.gameAction}>
-                        <Text style={styles.playText}>PLAY →</Text>
+                        <AppIcon
+                          name="arrow-right"
+                          size={20}
+                          color={COLORS.primary}
+                        />
                       </View>
                     </TouchableOpacity>
                   </GlassCard>
@@ -341,7 +391,11 @@ export default function MapScreen() {
 
               {nearbyGameDrops.length === 0 && location && (
                 <View style={styles.emptyState}>
-                  <Text style={styles.emptyEmoji}>🎮</Text>
+                  <AppIcon
+                    name="game"
+                    size={64}
+                    color={COLORS.textQuaternary}
+                  />
                   <Text style={styles.emptyText}>No games nearby</Text>
                   <Text style={styles.emptySubtext}>
                     Move around to discover games!
@@ -392,38 +446,27 @@ export default function MapScreen() {
         />
       )}
 
-      {/* Overlay UI */}
-      <View style={styles.overlay} pointerEvents="box-none">
-        <SafeAreaView style={styles.overlaySafeArea} pointerEvents="box-none">
-          {/* Compact Top Bar */}
-          <View style={styles.mapTopBar} pointerEvents="box-none">
-            <GlassCard style={styles.mapHeader} intensity={60}>
-              <View style={styles.headerRow}>
-                <View>
-                  <Text style={styles.logoText}>FLASH.MOB</Text>
-                  <Text style={styles.logoSubtext}>SCANNER ACTIVE</Text>
-                </View>
-                <BalanceDisplay variant="compact" />
-              </View>
-            </GlassCard>
-          </View>
+      {/* Compact Header Overlay */}
+      <CompactHeader
+        title="Map"
+        transparent
+        rightContent={<BalanceDisplay variant="compact" />}
+      />
 
-          {/* Nearby Games Counter */}
-          {nearbyGameDrops.length > 0 && (
-            <View style={styles.distanceIndicator}>
-              <GlassCard style={styles.distanceCard} intensity={40}>
-                <Text style={styles.distanceIcon}>🎮</Text>
-                <View>
-                  <Text style={styles.distanceText}>
-                    {nearbyGameDrops.length} Games
-                  </Text>
-                  <Text style={styles.distanceLabel}>nearby to play</Text>
-                </View>
-              </GlassCard>
+      {/* Nearby Games Counter */}
+      {nearbyGameDrops.length > 0 && (
+        <View style={styles.distanceIndicator}>
+          <GlassCard style={styles.distanceCard} intensity={40}>
+            <AppIcon name="game" size={20} color={COLORS.primary} />
+            <View style={{ marginLeft: SPACING.sm }}>
+              <Text style={styles.distanceText}>
+                {nearbyGameDrops.length} Games
+              </Text>
+              <Text style={styles.distanceLabel}>nearby to play</Text>
             </View>
-          )}
-        </SafeAreaView>
-      </View>
+          </GlassCard>
+        </View>
+      )}
 
       <GameModal
         visible={gameModalVisible}
@@ -452,7 +495,7 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
+    backgroundColor: COLORS.background,
   },
   safeArea: {
     flex: 1,
@@ -461,185 +504,31 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    padding: 20,
+    padding: SPACING.xl,
   },
   gridOverlay: {
     ...StyleSheet.absoluteFillObject,
     opacity: 0.1,
   },
 
-  // Header
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    marginBottom: 16,
-  },
-  appName: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: "#fff",
-    letterSpacing: 1,
-    fontStyle: "italic",
-  },
-  appStatus: {
-    fontSize: 9,
-    color: "#836EF9",
-    fontWeight: "700",
-    letterSpacing: 1.5,
-  },
-
-  // Scanner
-  scannerContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-    height: 280,
-    marginBottom: 16,
-  },
-  monadScanBadge: {
-    backgroundColor: "rgba(131, 110, 249, 0.2)",
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: "#836EF9",
-  },
-  monadScanText: {
-    color: "#836EF9",
-    fontSize: 10,
-    fontWeight: "700",
-    letterSpacing: 1.5,
-  },
-  scannerText: {
-    color: "rgba(255,255,255,0.5)",
-    fontSize: 11,
-    letterSpacing: 2,
-    marginTop: 16,
-    fontWeight: "600",
-  },
-
-  // List
-  bottomSheet: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  sectionTitle: {
-    color: "rgba(255,255,255,0.4)",
-    fontSize: 11,
-    fontWeight: "700",
-    marginBottom: 12,
-    letterSpacing: 1,
-  },
-  dropsList: {
-    flex: 1,
-  },
-  dropItem: {
-    marginBottom: 10,
-    borderRadius: 16,
-  },
-  dropItemHighlight: {
-    borderColor: "#836EF9",
-    borderWidth: 2,
-  },
-  dropItemContent: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 14,
-  },
-  dropIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.05)",
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 14,
-  },
-  dropIconActive: {
-    backgroundColor: "rgba(131, 110, 249, 0.3)",
-  },
-  dropDetails: {
-    flex: 1,
-  },
-  dropAmount: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  dropId: {
-    color: "rgba(255,255,255,0.4)",
-    fontSize: 9,
-    fontFamily: "monospace",
-    marginTop: 2,
-  },
-  dropStatus: {
-    alignItems: "flex-end",
-  },
-  statusText: {
-    color: "rgba(255,255,255,0.4)",
-    fontSize: 11,
-    fontWeight: "600",
-  },
-  statusTextActive: {
-    color: "#836EF9",
-  },
-  liveDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "#00D9FF",
-    marginTop: 4,
-  },
-
-  // Floating Claim (Scanner Mode)
-  floatingClaimContainer: {
-    position: "absolute",
-    bottom: 100,
-    left: 20,
-    right: 20,
-  },
-  claimCard: {
-    padding: 20,
-    borderRadius: 24,
-  },
-  claimHeader: {
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  claimTitle: {
-    color: "#00D9FF",
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 2,
-    marginBottom: 8,
-  },
-  claimAmount: {
-    color: "#fff",
-    fontSize: 32,
-    fontWeight: "900",
-  },
-
   // Permission UI
   permissionCard: {
-    padding: 32,
+    padding: SPACING.xxxl,
     width: "100%",
     alignItems: "center",
   },
   monadBadge: {
     backgroundColor: "rgba(131, 110, 249, 0.2)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-    marginBottom: 16,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.xs,
+    borderRadius: RADIUS.md,
+    marginBottom: SPACING.lg,
     borderWidth: 1,
-    borderColor: "#836EF9",
+    borderColor: COLORS.primary,
   },
   monadText: {
-    color: "#836EF9",
-    fontSize: 10,
+    color: COLORS.primary,
+    ...TYPOGRAPHY.caption2,
     fontWeight: "700",
     letterSpacing: 1.5,
   },
@@ -650,238 +539,207 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(131, 110, 249, 0.1)",
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: SPACING.xxl,
   },
   permissionTitle: {
-    fontSize: 28,
-    fontWeight: "900",
-    color: "#fff",
-    marginBottom: 8,
+    ...TYPOGRAPHY.title1,
+    color: COLORS.textPrimary,
+    marginBottom: SPACING.sm,
   },
   permissionSubtitle: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#00D9FF",
-    marginBottom: 16,
+    ...TYPOGRAPHY.headline,
+    color: COLORS.secondary,
+    marginBottom: SPACING.lg,
   },
   permissionText: {
-    fontSize: 15,
-    color: "rgba(255,255,255,0.7)",
+    ...TYPOGRAPHY.subheadline,
+    color: COLORS.textSecondary,
     textAlign: "center",
-    marginBottom: 20,
+    marginBottom: SPACING.xl,
     lineHeight: 22,
   },
   featureList: {
     alignSelf: "stretch",
-    marginBottom: 24,
-    gap: 8,
+    marginBottom: SPACING.xxl,
+    gap: SPACING.md,
+  },
+  featureRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.sm,
   },
   featureItem: {
-    color: "rgba(255,255,255,0.6)",
-    fontSize: 13,
+    color: COLORS.textSecondary,
+    ...TYPOGRAPHY.footnote,
     fontWeight: "600",
-    textAlign: "center",
   },
   primaryButton: {
-    backgroundColor: "#836EF9",
-    paddingHorizontal: 32,
-    paddingVertical: 16,
-    borderRadius: 16,
+    backgroundColor: COLORS.primary,
+    paddingHorizontal: SPACING.xxxl,
+    paddingVertical: SPACING.lg,
+    borderRadius: RADIUS.lg,
     width: "100%",
     alignItems: "center",
   },
   primaryButtonText: {
-    color: "#fff",
-    fontSize: 16,
+    color: COLORS.textPrimary,
+    ...TYPOGRAPHY.headline,
     fontWeight: "700",
+  },
+  privacyRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: SPACING.xs,
+    marginTop: SPACING.md,
   },
   privacyNote: {
-    color: "rgba(255,255,255,0.4)",
-    fontSize: 11,
-    marginTop: 12,
-    textAlign: "center",
+    color: COLORS.textQuaternary,
+    ...TYPOGRAPHY.caption2,
   },
 
-  // Map Overlay
-  overlay: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  overlaySafeArea: {
-    flex: 1,
-    justifyContent: "space-between",
-  },
-  mapTopBar: {
-    paddingHorizontal: 16,
-    paddingTop: 48, // Increased from 8 to prevent header cropping
-  },
-  mapHeader: {
-    padding: 14,
-    borderRadius: 20,
-  },
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  logoText: {
-    color: "#fff",
-    fontSize: 20,
+  // Scanner Mode
+  appName: {
+    ...TYPOGRAPHY.headline,
     fontWeight: "900",
-    fontStyle: "italic",
+    color: COLORS.textPrimary,
+    letterSpacing: 0.5,
   },
-  logoSubtext: {
-    color: "#836EF9",
-    fontSize: 10,
+  appStatus: {
+    ...TYPOGRAPHY.caption2,
+    color: COLORS.primary,
     fontWeight: "700",
-    letterSpacing: 2,
+    letterSpacing: 1.5,
   },
-
-  // Map Bottom Area
-  mapBottomArea: {
-    paddingHorizontal: 16,
-    paddingBottom: 100,
-  },
-  mapClaimPanel: {
-    padding: 20,
-    borderRadius: 24,
-  },
-  panelHeader: {
-    flexDirection: "row",
+  scannerContainer: {
     alignItems: "center",
-    marginBottom: 12,
     justifyContent: "center",
+    height: 240,
+    marginBottom: SPACING.lg,
   },
-  pulseIndicator: {
-    marginRight: 8,
+  monadScanBadge: {
+    backgroundColor: "rgba(131, 110, 249, 0.2)",
+    paddingHorizontal: SPACING.lg,
+    paddingVertical: SPACING.xs,
+    borderRadius: RADIUS.xl,
+    marginTop: SPACING.lg,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
   },
-  pulseDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "#00D9FF",
-  },
-  panelTitle: {
-    color: "#00D9FF",
-    fontSize: 11,
-    fontWeight: "800",
-    letterSpacing: 2,
-  },
-  panelContent: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  panelAmount: {
-    color: "#fff",
-    fontSize: 28,
-    fontWeight: "900",
-    marginBottom: 4,
-  },
-  panelDistance: {
-    color: "rgba(255,255,255,0.5)",
-    fontSize: 11,
-    fontWeight: "600",
-  },
-
-  // Distance Indicator
-  distanceIndicator: {
-    position: "absolute",
-    bottom: 120,
-    alignSelf: "center",
-  },
-  distanceCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 12,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-  },
-  distanceIcon: {
-    fontSize: 20,
-    marginRight: 10,
-  },
-  distanceText: {
-    color: "#fff",
-    fontSize: 16,
+  monadScanText: {
+    color: COLORS.primary,
+    ...TYPOGRAPHY.caption2,
     fontWeight: "700",
+    letterSpacing: 1.5,
   },
-  distanceLabel: {
-    color: "rgba(255,255,255,0.5)",
-    fontSize: 9,
+  scannerText: {
+    color: COLORS.textTertiary,
+    ...TYPOGRAPHY.caption1,
+    letterSpacing: 2,
+    marginTop: SPACING.lg,
     fontWeight: "600",
   },
+  scannerCoords: {
+    color: COLORS.textQuaternary,
+    ...TYPOGRAPHY.caption1,
+    marginTop: SPACING.xs,
+  },
 
-  // Game-specific styles
+  // Game List
+  bottomSheet: {
+    flex: 1,
+    paddingHorizontal: SPACING.lg,
+  },
+  sectionTitle: {
+    color: COLORS.textTertiary,
+    ...TYPOGRAPHY.caption1,
+    fontWeight: "700",
+    marginBottom: SPACING.md,
+    letterSpacing: 1,
+  },
+  dropsList: {
+    flex: 1,
+  },
   gameItem: {
-    marginBottom: 12,
+    marginBottom: SPACING.md,
     overflow: "hidden",
   },
   gameItemContent: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
+    padding: SPACING.md,
   },
   gameIcon: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 15,
+    marginRight: SPACING.md,
     elevation: 5,
   },
   gameDetails: {
     flex: 1,
   },
   gameName: {
-    color: "#FFF",
-    fontSize: 18,
+    color: COLORS.textPrimary,
+    ...TYPOGRAPHY.headline,
     fontWeight: "bold",
-    marginBottom: 4,
+    marginBottom: SPACING.xs,
   },
   gameReward: {
     color: "#FFD93D",
-    fontSize: 14,
+    ...TYPOGRAPHY.subheadline,
     fontWeight: "600",
-    marginBottom: 4,
+    marginBottom: SPACING.xs,
   },
   difficultyBadge: {
     alignSelf: "flex-start",
   },
   difficultyText: {
-    fontSize: 11,
+    ...TYPOGRAPHY.caption2,
     fontWeight: "bold",
     letterSpacing: 1,
   },
   gameAction: {
-    paddingLeft: 10,
-  },
-  playText: {
-    color: "#836EF9",
-    fontSize: 14,
-    fontWeight: "bold",
+    paddingLeft: SPACING.sm,
   },
   emptyState: {
     alignItems: "center",
     paddingVertical: 60,
   },
-  emptyEmoji: {
-    fontSize: 60,
-    marginBottom: 20,
-  },
   emptyText: {
-    color: "#FFF",
-    fontSize: 20,
+    color: COLORS.textPrimary,
+    ...TYPOGRAPHY.title3,
     fontWeight: "bold",
-    marginBottom: 8,
+    marginTop: SPACING.xl,
+    marginBottom: SPACING.sm,
   },
   emptySubtext: {
-    color: "#AAA",
-    fontSize: 14,
+    color: COLORS.textTertiary,
+    ...TYPOGRAPHY.subheadline,
   },
-  scannerCoords: {
-    color: "rgba(255,255,255,0.3)",
-    fontSize: 12,
-    marginTop: 5,
+
+  // Map Overlay
+  distanceIndicator: {
+    position: "absolute",
+    bottom: LAYOUT.tabBarHeight + SPACING.xl,
+    alignSelf: "center",
+  },
+  distanceCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: SPACING.md,
+    paddingHorizontal: SPACING.lg,
+    borderRadius: RADIUS.xl,
+  },
+  distanceText: {
+    color: COLORS.textPrimary,
+    ...TYPOGRAPHY.headline,
+    fontWeight: "700",
+  },
+  distanceLabel: {
+    color: COLORS.textTertiary,
+    ...TYPOGRAPHY.caption2,
+    fontWeight: "600",
   },
 });

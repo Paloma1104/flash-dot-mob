@@ -7,6 +7,7 @@ import {
   setCachedGames,
 } from "../services/gameCache";
 import type { GameDrop, GameSession, GameStats, GameType } from "../types/game";
+import { usePendingTransactionStore } from "./pendingTransactionStore";
 import { useUserStore } from "./userStore";
 
 interface GameState {
@@ -71,7 +72,7 @@ export const useGameStore = create<GameState>()(
       startGame: async (gameDrop: GameDrop) => {
         const userStore = useUserStore.getState();
 
-        // Check if user has enough AP tokens
+        // Check if user has enough AP tokens (optimistic - deducted immediately)
         if (userStore.apBalance < gameDrop.apCost) {
           console.warn("Insufficient AP balance");
           return false;
@@ -89,7 +90,7 @@ export const useGameStore = create<GameState>()(
           apSpent: gameDrop.apCost,
         };
 
-        // Deduct AP tokens optimistically
+        // Deduct AP tokens optimistically (Play Now)
         userStore.deductAP(gameDrop.apCost);
 
         set({
@@ -98,36 +99,9 @@ export const useGameStore = create<GameState>()(
           selectedGameDrop: gameDrop,
         });
 
-        // Call smart contract to burn AP tokens on-chain
-        try {
-          // Get wallet client from Privy hook (needs to be passed in)
-          // This is now handled by the frontend component that calls startGame
-          console.log("✅ Game session created:", session.id);
-          console.log("Ready for blockchain integration via wallet client");
-
-          // Note: The actual blockchain call should be made from the component
-          // that has access to useWallet() hook. Example:
-          // const { walletClient } = useWallet();
-          // const { getAPTokenService } = await import('../services/blockchain/apTokenService');
-          // const apService = getAPTokenService();
-          // await apService.startGameOnChain(
-          //   session.id,
-          //   gameDrop.gameType,
-          //   gameDrop.difficulty,
-          //   userStore.walletAddress as `0x${string}`,
-          //   walletClient
-          // );
-        } catch (error) {
-          console.error("Failed to start game on blockchain:", error);
-          // Refund AP if blockchain call fails
-          userStore.addAP(gameDrop.apCost);
-          set({
-            activeSession: null,
-            isGameActive: false,
-            selectedGameDrop: null,
-          });
-          return false;
-        }
+        // No wallet confirmation needed - game starts immediately!
+        console.log("⚡ Game started instantly (Play Now, Confirm Later)");
+        console.log("📦 Transactions will be queued for batch claiming");
 
         return true;
       },
@@ -172,11 +146,16 @@ export const useGameStore = create<GameState>()(
 
         get().addRecentSession(completedSession);
 
-        // Update user balance if won
-        if (didWin) {
-          const userStore = useUserStore.getState();
-          userStore.addPendingBalance(rewardEarned);
-          userStore.confirmPendingBalance(rewardEarned);
+        // Queue reward as pending transaction (Confirm Later)
+        if (didWin && rewardEarned > 0) {
+          const pendingStore = usePendingTransactionStore.getState();
+          pendingStore.addPendingTransaction({
+            type: "GAME_REWARD",
+            gameType: selectedGameDrop.gameType,
+            sessionId: completedSession.id,
+            amount: rewardEarned,
+          });
+          console.log(`🏆 Reward queued: ${rewardEarned} AP (claim later)`);
         }
       },
 

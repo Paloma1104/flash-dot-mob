@@ -1,11 +1,11 @@
 import * as Location from "expo-location";
 import { useEffect, useRef, useState } from "react";
 import {
-  ActivityIndicator,
-  Animated,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Animated,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 import MapView, { Circle, Marker, PROVIDER_GOOGLE } from "react-native-maps";
 
@@ -120,7 +120,8 @@ export function FlashMobMapView({
   if (!locationPermission) {
     return (
       <View style={styles.centered}>
-        <Text style={styles.errorText}>📍 Location permission required</Text>
+        <AppIcon name="location" size={48} color="#EF4444" />
+        <Text style={styles.errorText}>Location permission required</Text>
         <Text style={styles.subText}>Enable location to find nearby drops</Text>
       </View>
     );
@@ -198,7 +199,7 @@ export function FlashMobMapView({
                   {/* Reward Badge */}
                   <View style={styles.rewardBadge}>
                     <Text style={styles.rewardText}>
-                      🪙{gameDrop.rewardAmount}
+                      {gameDrop.rewardAmount}
                     </Text>
                   </View>
                 </View>
@@ -249,7 +250,7 @@ export function FlashMobMapView({
                 ]}
               >
                 <View style={styles.multiplayerIconContainer}>
-                  <Text style={styles.multiplayerEmoji}>🏟️</Text>
+                  <AppIcon name="trophy" size={28} color="#000" />
                 </View>
                 <View style={styles.multiplayerBadge}>
                   <Text style={styles.multiplayerBadgeText}>
@@ -258,7 +259,7 @@ export function FlashMobMapView({
                 </View>
                 <View style={styles.multiplayerStake}>
                   <Text style={styles.multiplayerStakeText}>
-                    🪙{station.stakeAmount}
+                    {station.stakeAmount}
                   </Text>
                 </View>
               </Animated.View>
