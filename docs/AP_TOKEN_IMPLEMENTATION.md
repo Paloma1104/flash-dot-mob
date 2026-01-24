@@ -276,7 +276,7 @@ EXPO_PUBLIC_DROP_CLAIMER_ADDRESS=0x...
 ### 4. Initialize Services
 
 ```typescript
-import { initAPTokenService } from "@/src/services/blockchain/apTokenService";
+import { initAPTokenService } from "@/services/blockchain/apTokenService";
 
 initAPTokenService(
   process.env.EXPO_PUBLIC_AP_TOKEN_ADDRESS,
@@ -465,3 +465,4 @@ Once deployed, track:
 **Built with ⚡ on Monad**
 
 _Ready to deploy and start earning!_
+

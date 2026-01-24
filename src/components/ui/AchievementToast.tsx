@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Animated, StyleSheet, Text, View } from 'react-native';
 
-import { useUserStore } from '@/src/stores/userStore';
+import { useUserStore } from '@/stores/userStore';
 import { GlassCard } from './GlassCard';
 
 export function AchievementToast() {
@@ -140,3 +140,4 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
 });
+

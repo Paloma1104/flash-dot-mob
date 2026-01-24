@@ -11,12 +11,12 @@ import {
     View,
 } from "react-native";
 
-import { useGameStore } from "@/src/stores/gameStore";
-import { useUserStore } from "@/src/stores/userStore";
-import type { GameDrop } from "@/src/types/game";
-import { GAME_CONFIGS, GameType } from "@/src/types/game";
-import { useStartGame, useClaimReward } from "@/src/hooks/useBlockchain";
-import { useWallet } from "@/src/hooks/useWallet";
+import { useGameStore } from "@/stores/gameStore";
+import { useUserStore } from "@/stores/userStore";
+import type { GameDrop } from "@/types/game";
+import { GAME_CONFIGS, GameType } from "@/types/game";
+import { useStartGame, useClaimReward } from "@/hooks/useBlockchain";
+import { useWallet } from "@/hooks/useWallet";
 import {
     ColorSequenceGame,
     MathChallengeGame,
@@ -716,3 +716,4 @@ const styles = StyleSheet.create({
     color: "#FFF",
   },
 });
+

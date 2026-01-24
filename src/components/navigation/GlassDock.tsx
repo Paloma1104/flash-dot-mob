@@ -1,4 +1,4 @@
-import { GlassCard } from '@/src/components/ui/GlassCard';
+import { GlassCard } from '@/components/ui/GlassCard';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -143,3 +143,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
+

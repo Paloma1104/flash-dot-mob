@@ -1,4 +1,4 @@
-import type { Drop } from '@/src/types/drop';
+import type { Drop } from '@/types/drop';
 import { api } from './client';
 
 // API Response types
@@ -93,4 +93,5 @@ export const endpoints = {
 
 // Export types for consumers
 export type { ClaimRequest, ClaimResponse, DropsResponse, LeaderboardEntry, LeaderboardResponse };
+
 

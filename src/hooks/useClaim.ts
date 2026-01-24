@@ -1,8 +1,8 @@
-import { locationEngine } from "@/src/services/location/locationEngine";
-import { checkDeviceIntegrity } from "@/src/services/security/deviceIntegrity";
-import { checkVelocity } from "@/src/services/security/velocityCheck";
-import { useDropStore } from "@/src/stores/dropStore";
-import { useUserStore } from "@/src/stores/userStore";
+import { locationEngine } from "@/services/location/locationEngine";
+import { checkDeviceIntegrity } from "@/services/security/deviceIntegrity";
+import { checkVelocity } from "@/services/security/velocityCheck";
+import { useDropStore } from "@/stores/dropStore";
+import { useUserStore } from "@/stores/userStore";
 import * as Haptics from "expo-haptics";
 import { useCallback, useState } from "react";
 import { useClaimDrop } from "./useBlockchain";
@@ -181,3 +181,4 @@ export function useClaim(): UseClaimReturn {
     lastClaimResult,
   };
 }
+

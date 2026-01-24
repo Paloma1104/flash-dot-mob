@@ -11,12 +11,11 @@ export const FLASH_MOB_ABI = [
   {
     inputs: [
       { name: "dropId", type: "bytes32" },
-      { name: "claimer", type: "address" },
-      { name: "nonce", type: "uint256" },
+      { name: "amount", type: "uint256" },
       { name: "deadline", type: "uint256" },
       { name: "signature", type: "bytes" },
     ],
-    name: "claimDrop",
+    name: "claimWithHash",
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
@@ -26,14 +25,14 @@ export const FLASH_MOB_ABI = [
       { name: "dropId", type: "bytes32" },
       { name: "claimer", type: "address" },
     ],
-    name: "isDropClaimed",
+    name: "isClaimedHash",
     outputs: [{ name: "", type: "bool" }],
     stateMutability: "view",
     type: "function",
   },
   {
     inputs: [{ name: "claimer", type: "address" }],
-    name: "getNonce",
+    name: "nonces",
     outputs: [{ name: "", type: "uint256" }],
     stateMutability: "view",
     type: "function",
@@ -51,12 +50,12 @@ export interface FlashMobService {
   getNonce: (claimer: `0x${string}`) => Promise<number>;
   claimDrop: (
     dropId: string,
-    claimer: `0x${string}`,
-    nonce: number,
+    amount: bigint,
     deadline: number,
     signature: `0x${string}`,
     walletClient: any,
   ) => Promise<`0x${string}`>;
+  contractAddress: `0x${string}`;
 }
 
 export function createFlashMobService(
@@ -79,7 +78,7 @@ export function createFlashMobService(
       const claimed = await publicClient.readContract({
         address: flashMobAddress,
         abi: FLASH_MOB_ABI,
-        functionName: "isDropClaimed",
+        functionName: "isClaimedHash",
         args: [dropIdBytes32, claimer],
       });
 
@@ -91,14 +90,14 @@ export function createFlashMobService(
   }
 
   /**
-   * Get nonce for a user (used in EIP-712 signature)
+   * Get nonce for a user
    */
   async function getNonce(claimer: `0x${string}`): Promise<number> {
     try {
       const nonce = await publicClient.readContract({
         address: flashMobAddress,
         abi: FLASH_MOB_ABI,
-        functionName: "getNonce",
+        functionName: "nonces",
         args: [claimer],
       });
 
@@ -111,12 +110,10 @@ export function createFlashMobService(
 
   /**
    * Claim a drop on blockchain
-   * @requires Backend API to verify GPS proximity and generate EIP-712 signature
    */
   async function claimDrop(
     dropId: string,
-    claimer: `0x${string}`,
-    nonce: number,
+    amount: bigint,
     deadline: number,
     signature: `0x${string}`,
     walletClient: any,
@@ -128,19 +125,18 @@ export function createFlashMobService(
         .padEnd(64, "0")
         .slice(0, 64)}` as `0x${string}`;
 
-      // Call claimDrop on FlashMobV2 contract
+      // Call claimWithHash on FlashMobV2 contract
       const hash = await walletClient.writeContract({
         address: flashMobAddress,
         abi: FLASH_MOB_ABI,
-        functionName: "claimDrop",
+        functionName: "claimWithHash",
         args: [
           dropIdBytes32,
-          claimer,
-          BigInt(nonce),
+          amount,
           BigInt(deadline),
           signature,
         ],
-        account: claimer,
+        account: walletClient.account.address,
       });
 
       console.log("Drop claimed on blockchain:", hash);
@@ -155,6 +151,7 @@ export function createFlashMobService(
     isDropClaimed,
     getNonce,
     claimDrop,
+    contractAddress: flashMobAddress,
   };
 }
 

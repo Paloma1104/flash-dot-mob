@@ -1,4 +1,4 @@
-import type { Drop } from "@/src/types/drop";
+import type { Drop } from "@/types/drop";
 import type {
   ClaimRequest,
   ClaimResponse,
@@ -210,3 +210,4 @@ export const mockApi = {
 
 // Export helper to check if using mock
 export const isMockMode = () => USE_MOCK_DATA;
+

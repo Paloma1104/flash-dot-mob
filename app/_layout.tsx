@@ -12,10 +12,10 @@ import { WagmiProvider } from "wagmi";
 import "../global.css";
 
 import { useColorScheme } from "@/hooks/use-color-scheme";
-import { AchievementToast } from "@/src/components/ui/AchievementToast";
-import { wagmiConfig } from "@/src/config/wagmi";
-import { initAPTokenService } from "@/src/services/blockchain/apTokenService";
-import { initFlashMobService } from "@/src/services/blockchain/flashMobService";
+import { AchievementToast } from "@/components/ui/AchievementToast";
+import { wagmiConfig } from "@/config/wagmi";
+import { initAPTokenService } from "@/services/blockchain/apTokenService";
+import { initFlashMobService } from "@/services/blockchain/flashMobService";
 
 // Create a client
 const queryClient = new QueryClient({
@@ -92,3 +92,4 @@ export default function RootLayout() {
     </QueryClientProvider>
   );
 }
+

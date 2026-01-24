@@ -1,4 +1,4 @@
-import { calculateBearing, haversineDistance } from '@/src/utils/geo';
+import { calculateBearing, haversineDistance } from '@/utils/geo';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useEffect, useState } from 'react';
 import { Dimensions, StyleSheet, Text, View } from 'react-native';
@@ -301,3 +301,4 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+

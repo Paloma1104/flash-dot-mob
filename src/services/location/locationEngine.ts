@@ -1,4 +1,4 @@
-import { HIGH_ACCURACY_DURATION_MS, LOCATION_POLL_INTERVAL_MS } from '@/src/utils/constants';
+import { HIGH_ACCURACY_DURATION_MS, LOCATION_POLL_INTERVAL_MS } from '@/utils/constants';
 import * as Location from 'expo-location';
 
 export type LocationMode = 'battery' | 'high-accuracy';
@@ -195,3 +195,4 @@ class LocationEngine {
 
 // Export singleton instance
 export const locationEngine = new LocationEngine();
+

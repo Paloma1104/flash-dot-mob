@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-import type { Drop, GeoJSONDropCollection } from '@/src/types/drop';
+import type { Drop, GeoJSONDropCollection } from '@/types/drop';
 
 // Viewport bounds
 interface Viewport {
@@ -104,3 +104,4 @@ export const useDropStore = create<DropState>()((set) => ({
       nearbyDropId: null,
     }),
 }));
+

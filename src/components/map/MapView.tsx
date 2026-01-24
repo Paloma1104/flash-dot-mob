@@ -9,9 +9,9 @@ import {
 } from "react-native";
 import MapView, { Circle, Marker, PROVIDER_GOOGLE } from "react-native-maps";
 
-import type { GameDrop } from "@/src/types/game";
-import { GAME_CONFIGS } from "@/src/types/game";
-import type { MultiplayerStation } from "@/src/types/multiplayer";
+import type { GameDrop } from "@/types/game";
+import { GAME_CONFIGS } from "@/types/game";
+import type { MultiplayerStation } from "@/types/multiplayer";
 
 interface FlashMobMapViewProps {
   drops?: GameDrop[];
@@ -453,3 +453,4 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
 });
+

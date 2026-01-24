@@ -5,13 +5,13 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
-import { GlassCard } from "@/src/components/ui/GlassCard";
-import { useWallet } from "@/src/hooks/useWallet";
-import { LeaderboardEntry } from "@/src/services/api/endpoints";
-import { useGameStore } from "@/src/stores/gameStore";
-import { useUserStore } from "@/src/stores/userStore";
-import { GAME_CONFIGS, GameType } from "@/src/types/game";
-import { generateSimulatedLeaderboard } from "@/src/utils/leaderboardSimulation";
+import { GlassCard } from "@/components/ui/GlassCard";
+import { useWallet } from "@/hooks/useWallet";
+import { LeaderboardEntry } from "@/services/api/endpoints";
+import { useGameStore } from "@/stores/gameStore";
+import { useUserStore } from "@/stores/userStore";
+import { GAME_CONFIGS, GameType } from "@/types/game";
+import { generateSimulatedLeaderboard } from "@/utils/leaderboardSimulation";
 
 export default function LeaderboardScreen() {
   const { address, isConnected } = useWallet();
@@ -1414,3 +1414,4 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
   },
 });
+

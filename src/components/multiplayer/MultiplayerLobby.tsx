@@ -11,11 +11,11 @@ import {
   View,
 } from "react-native";
 
-import { useMultiplayerStore } from "@/src/stores/multiplayerStore";
-import { useUserStore } from "@/src/stores/userStore";
-import { GAME_CONFIGS, type GameType } from "@/src/types/game";
-import type { MultiplayerStation } from "@/src/types/multiplayer";
-import { MULTIPLAYER_GAMES } from "@/src/types/multiplayer";
+import { useMultiplayerStore } from "@/stores/multiplayerStore";
+import { useUserStore } from "@/stores/userStore";
+import { GAME_CONFIGS, type GameType } from "@/types/game";
+import type { MultiplayerStation } from "@/types/multiplayer";
+import { MULTIPLAYER_GAMES } from "@/types/multiplayer";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -495,3 +495,4 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
+

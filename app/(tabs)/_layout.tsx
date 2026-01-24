@@ -2,7 +2,7 @@ import { Tabs } from 'expo-router';
 import React from 'react';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { GlassDock } from '@/src/components/navigation/GlassDock';
+import { GlassDock } from '@/components/navigation/GlassDock';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -36,3 +36,4 @@ export default function TabLayout() {
     </Tabs>
   );
 }
+

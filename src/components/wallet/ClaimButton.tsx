@@ -8,9 +8,9 @@ import Animated, {
     withSpring,
 } from 'react-native-reanimated';
 
-import { useClaim } from '@/src/hooks/useClaim';
-import { useWallet } from '@/src/hooks/useWallet';
-import { formatDistance } from '@/src/utils/geo';
+import { useClaim } from '@/hooks/useClaim';
+import { useWallet } from '@/hooks/useWallet';
+import { formatDistance } from '@/utils/geo';
 
 interface ClaimButtonProps {
   dropId: string;
@@ -153,3 +153,4 @@ const styles = StyleSheet.create({
     gap: 8,
   },
 });
+

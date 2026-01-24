@@ -1,4 +1,4 @@
-import { LeaderboardEntry } from '@/src/services/api/endpoints';
+import { LeaderboardEntry } from '@/services/api/endpoints';
 
 /**
  * Generates a simulated leaderboard around the user's score.
@@ -58,3 +58,4 @@ export function generateSimulatedLeaderboard(
     rank: index + 1,
   }));
 }
+
