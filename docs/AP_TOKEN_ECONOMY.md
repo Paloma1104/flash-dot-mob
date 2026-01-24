@@ -224,7 +224,7 @@ npm run contracts:deploy:testnet
 ### Initialize Services
 
 ```typescript
-import { initAPTokenService } from "@/src/services/blockchain/apTokenService";
+import { initAPTokenService } from "@/services/blockchain/apTokenService";
 
 // Initialize with deployed contract addresses
 initAPTokenService(
@@ -240,7 +240,7 @@ initAPTokenService(
 ### Check AP Balance
 
 ```typescript
-import { getAPTokenService } from "@/src/services/blockchain/apTokenService";
+import { getAPTokenService } from "@/services/blockchain/apTokenService";
 
 const apService = getAPTokenService();
 const balance = await apService.getAPBalance(userAddress);
@@ -303,7 +303,7 @@ Located at: `src/components/ui/APPurchaseModal.tsx`
 **Usage:**
 
 ```tsx
-import { APPurchaseModal } from "@/src/components/ui/APPurchaseModal";
+import { APPurchaseModal } from "@/components/ui/APPurchaseModal";
 
 <APPurchaseModal
   visible={showModal}
@@ -415,3 +415,4 @@ A: Yes! Once Monad mainnet launches, we'll migrate to real MON tokens.
 ---
 
 Built with ⚡ on Monad - The fastest EVM blockchain
+

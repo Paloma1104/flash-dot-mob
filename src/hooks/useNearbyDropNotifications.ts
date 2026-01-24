@@ -1,7 +1,7 @@
-import { notifyEnterZone, notifyNearbyDrop } from '@/src/services/notifications/pushNotifications';
-import { useDropStore } from '@/src/stores/dropStore';
-import { useSettingsStore } from '@/src/stores/settingsStore';
-import { haversineDistance } from '@/src/utils/geo';
+import { notifyEnterZone, notifyNearbyDrop } from '@/services/notifications/pushNotifications';
+import { useDropStore } from '@/stores/dropStore';
+import { useSettingsStore } from '@/stores/settingsStore';
+import { haversineDistance } from '@/utils/geo';
 import { useCallback, useEffect, useRef } from 'react';
 
 /**
@@ -102,3 +102,4 @@ export function useNearbyDropNotifications(
   // Return function to manually trigger check
   return { checkAndNotify };
 }
+

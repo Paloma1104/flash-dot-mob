@@ -96,7 +96,7 @@ npm run dev
 ### Example 1: Connect Wallet (in any component)
 
 ```typescript
-import { useWallet } from '@/src/hooks/useWallet';
+import { useWallet } from '@/hooks/useWallet';
 
 function MyComponent() {
   const { connect, disconnect, address, isConnected } = useWallet();
@@ -119,7 +119,7 @@ function MyComponent() {
 ### Example 2: Claim Airdrop
 
 ```typescript
-import { useClaimAirdrop } from '@/src/hooks/useBlockchain';
+import { useClaimAirdrop } from '@/hooks/useBlockchain';
 
 function AirdropButton() {
   const { claimAirdrop, isLoading, error, txHash } = useClaimAirdrop();
@@ -145,7 +145,7 @@ function AirdropButton() {
 ### Example 3: Start Game with Blockchain
 
 ```typescript
-import { useStartGame } from '@/src/hooks/useBlockchain';
+import { useStartGame } from '@/hooks/useBlockchain';
 
 function GameStartButton({ sessionId, gameType, difficulty }) {
   const { startGame, isLoading } = useStartGame();
@@ -170,7 +170,7 @@ function GameStartButton({ sessionId, gameType, difficulty }) {
 ### Example 4: Purchase AP with MON
 
 ```typescript
-import { usePurchaseAP } from '@/src/hooks/useBlockchain';
+import { usePurchaseAP } from '@/hooks/useBlockchain';
 import { parseUnits } from 'viem';
 
 function PurchaseButton() {
@@ -363,3 +363,4 @@ Your Flash.Mob app now has:
 - [Privy Docs](https://docs.privy.io/)
 - [Viem Docs](https://viem.sh/)
 - [Flash.Mob Test Results](../contracts/TEST_RESULTS_FINAL.md)
+

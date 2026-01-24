@@ -1,4 +1,4 @@
-import { API_BASE_URL } from '@/src/utils/constants';
+import { API_BASE_URL } from '@/utils/constants';
 
 // Request configuration
 interface RequestConfig extends RequestInit {
@@ -104,3 +104,4 @@ export const api = {
   delete: <T>(endpoint: string) =>
     request<T>(endpoint, { method: 'DELETE' }),
 };
+

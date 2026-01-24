@@ -1,6 +1,6 @@
-import { usePurchaseAP } from "@/src/hooks/useBlockchain";
-import { useWallet } from "@/src/hooks/useWallet";
-import { useUserStore } from "@/src/stores/userStore";
+import { usePurchaseAP } from "@/hooks/useBlockchain";
+import { useWallet } from "@/hooks/useWallet";
+import { useUserStore } from "@/stores/userStore";
 import React, { useEffect, useState } from "react";
 import {
     ActivityIndicator,
@@ -743,3 +743,4 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
 });
+

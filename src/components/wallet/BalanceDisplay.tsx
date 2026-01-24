@@ -1,5 +1,5 @@
-import { useWallet } from '@/src/hooks/useWallet';
-import { useUserStore } from '@/src/stores/userStore';
+import { useWallet } from '@/hooks/useWallet';
+import { useUserStore } from '@/stores/userStore';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 interface BalanceDisplayProps {
@@ -152,3 +152,4 @@ const styles = StyleSheet.create({
     fontFamily: 'monospace',
   },
 });
+

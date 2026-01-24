@@ -1,17 +1,17 @@
-import { monadTestnet } from "@/src/config/wagmi";
-import { getWalletConnectProvider } from "@/src/config/walletConnectProvider";
-import { useUserStore } from "@/src/stores/userStore";
-import { logTransactionDetails } from "@/src/utils/transactionDebug";
+import { monadTestnet } from "@/config/wagmi";
+import { getWalletConnectProvider } from "@/config/walletConnectProvider";
+import { useUserStore } from "@/stores/userStore";
+import { logTransactionDetails } from "@/utils/transactionDebug";
 import { useCallback, useEffect, useState } from "react";
 import { Alert, Linking } from "react-native";
 import type { WalletClient } from "viem";
 import { createPublicClient, formatEther, http } from "viem";
 import {
-    useAccount,
-    useConnect,
-    useDisconnect,
-    useSignMessage,
-    useWalletClient,
+  useAccount,
+  useConnect,
+  useDisconnect,
+  useSignMessage,
+  useWalletClient,
 } from "wagmi";
 
 interface WalletState {
@@ -35,7 +35,7 @@ interface UseWalletReturn extends WalletState {
  */
 // Module-level state cache for deduplication across all component instances
 let globalLastLoggedState = "";
-let logTimeout: NodeJS.Timeout | null = null;
+let logTimeout: any = null;
 
 export function useWallet(): UseWalletReturn {
   const { address, isConnected: wagmiConnected } = useAccount();
@@ -53,7 +53,23 @@ export function useWallet(): UseWalletReturn {
     setAuthenticated,
     setBalance,
     logout: storeLogout,
+    hasClaimedInitialAP,
+    setHasClaimedInitialAP,
+    addAP,
   } = useUserStore();
+
+  // Initial AP Airdrop - 1000 AP on first connection
+  useEffect(() => {
+    if (isAuthenticated && !hasClaimedInitialAP) {
+      console.log("🎉 User connected! Adding 1000 AP welcome bonus");
+      addAP(1000);
+      setHasClaimedInitialAP(true);
+      Alert.alert(
+        "Welcome Bonus! 🎉",
+        "You've received 1000 AP for connecting your wallet!",
+      );
+    }
+  }, [isAuthenticated, hasClaimedInitialAP, addAP, setHasClaimedInitialAP]);
 
   // Create public client for reading blockchain data
   const publicClient = createPublicClient({
@@ -104,7 +120,7 @@ export function useWallet(): UseWalletReturn {
     // Debounce and deduplicate globally
     if (stateKey !== globalLastLoggedState) {
       if (logTimeout) clearTimeout(logTimeout);
-      
+
       logTimeout = setTimeout(() => {
         globalLastLoggedState = stateKey;
         console.log("🔍 Wallet State:", {
@@ -641,7 +657,7 @@ export function useWallet(): UseWalletReturn {
                   {
                     text: "Open MetaMask",
                     onPress: () =>
-                      Linking.openURL("metamask://").catch(() => {}),
+                      Linking.openURL("metamask://").catch(() => { }),
                   },
                   { text: "Waiting...", style: "cancel" },
                 ],
@@ -796,10 +812,10 @@ async function switchToCorrectNetwork(
         console.error("❌ Cannot add Anvil local network to MetaMask mobile");
         throw new Error(
           "MetaMask mobile cannot connect to localhost.\n\n" +
-            "Solutions:\n" +
-            "1. Use MetaMask browser extension instead\n" +
-            "2. Deploy contracts to Monad testnet\n" +
-            "3. Expose Anvil via ngrok and use that URL",
+          "Solutions:\n" +
+          "1. Use MetaMask browser extension instead\n" +
+          "2. Deploy contracts to Monad testnet\n" +
+          "3. Expose Anvil via ngrok and use that URL",
         );
       }
 
@@ -875,3 +891,4 @@ async function switchToCorrectNetwork(
     }
   }
 }
+

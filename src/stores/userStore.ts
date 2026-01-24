@@ -322,7 +322,7 @@ export const useUserStore = create<UserState>()(
                   .slice(0, 5);
                 if (recentClaims.length >= 5) {
                   const timeDiff =
-                    recentClaims[0].timestamp - recentClaims[4].timestamp;
+                    recentClaims[0]!.timestamp - recentClaims[4]!.timestamp;
                   shouldUnlock = timeDiff <= 10 * 60 * 1000;
                   progress = shouldUnlock
                     ? 100
@@ -348,7 +348,7 @@ export const useUserStore = create<UserState>()(
 
           // Find newly unlocked achievements
           const newlyUnlocked = updatedAchievements
-            .filter((a, idx) => a.unlocked && !achievements[idx].unlocked)
+            .filter((a, idx) => a.unlocked && !achievements[idx]!.unlocked)
             .map((a) => a.id);
 
           return {

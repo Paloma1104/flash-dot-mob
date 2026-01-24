@@ -9,13 +9,13 @@ import {
   View,
 } from "react-native";
 
-import { useMultiplayerStore } from "@/src/stores/multiplayerStore";
-import { useUserStore } from "@/src/stores/userStore";
-import { GAME_CONFIGS } from "@/src/types/game";
+import { useMultiplayerStore } from "@/stores/multiplayerStore";
+import { useUserStore } from "@/stores/userStore";
+import { GAME_CONFIGS } from "@/types/game";
 import type {
   MultiplayerPlayer,
   MultiplayerSession,
-} from "@/src/types/multiplayer";
+} from "@/types/multiplayer";
 
 // Import game components
 import { ColorSequenceGame } from "../games/ColorSequenceGame";
@@ -410,3 +410,4 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 });
+

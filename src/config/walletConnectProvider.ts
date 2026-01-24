@@ -23,13 +23,15 @@ if (typeof global !== "undefined") {
       args[0] !== null &&
       ("context" in args[0] || "level" in args[0]);
 
+    const lowerMsg = message.toLowerCase();
+
     if (
-      // String-based filters
-      message.includes("onRelayMessage") ||
-      message.includes("session topic doesn't exist") ||
-      message.includes("request() -> isValidRequest()") ||
-      message.includes("Missing or invalid. request() chainId") ||
-      message.includes("No matching key") ||
+      // String-based filters (case-insensitive)
+      lowerMsg.includes("onrelaymessage") ||
+      lowerMsg.includes("session topic doesn't exist") ||
+      lowerMsg.includes("request() -> isvalidrequest()") ||
+      lowerMsg.includes("missing or invalid. request() chainid") ||
+      lowerMsg.includes("no matching key") ||
       // JSON message filters
       jsonMessage.includes("onRelayMessage") ||
       jsonMessage.includes("isValidRequest") ||

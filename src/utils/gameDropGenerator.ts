@@ -1,20 +1,20 @@
-import { GameType, GAME_CONFIGS, type GameDrop } from '../types/game';
+import { GAME_CONFIGS, GameType, type GameDrop } from '../types/game';
 
 // Generate mock game drops around a location
 // Radius of 0.01-0.03 (~1-3 kilometers) for proper spacing
 export function generateMockGameDrops(latitude: number, longitude: number): GameDrop[] {
-  const minRadius = 0.01; // ~1 kilometer
-  const maxRadius = 0.03; // ~3 kilometers
+  const minRadius = 0.0005; // ~50 meters
+  const maxRadius = 0.0045; // ~500 meters
   const gameTypes = Object.values(GameType);
   const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'medium', 'hard'];
-  
+
   const drops: GameDrop[] = [];
   const dropCount = 20; // Generate 20 game drops with good spacing
 
   for (let i = 0; i < dropCount; i++) {
-    const randomGameType = gameTypes[Math.floor(Math.random() * gameTypes.length)];
-    const randomDifficulty = difficulties[Math.floor(Math.random() * difficulties.length)];
-    
+    const randomGameType = gameTypes[Math.floor(Math.random() * gameTypes.length)]!;
+    const randomDifficulty = difficulties[Math.floor(Math.random() * difficulties.length)]!;
+
     // Random position between minRadius and maxRadius (1-3km)
     const angle = Math.random() * 2 * Math.PI;
     const distance = minRadius + Math.random() * (maxRadius - minRadius);
@@ -22,9 +22,9 @@ export function generateMockGameDrops(latitude: number, longitude: number): Game
     const randomLng = longitude + distance * Math.sin(angle);
 
     // Get game config for this game type
-    const gameConfig = GAME_CONFIGS[randomGameType];
+    const gameConfig = GAME_CONFIGS[randomGameType as GameType];
     const difficultyConfig = gameConfig.difficultyLevels[randomDifficulty];
-    
+
     // Use the configured reward and AP cost from game config
     const rewardAmount = difficultyConfig.reward;
     const apCost = difficultyConfig.apCost;

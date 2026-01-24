@@ -1,6 +1,6 @@
-import { useDropStore } from '@/src/stores/dropStore';
-import type { Drop } from '@/src/types/drop';
-import { calculateDistanceMeters, generateMockDrops } from '@/src/utils/geo';
+import { useDropStore } from '@/stores/dropStore';
+import type { Drop } from '@/types/drop';
+import { calculateDistanceMeters, generateMockDrops } from '@/utils/geo';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo } from 'react';
 
@@ -22,7 +22,7 @@ interface FetchDropsParams {
  * Fetch drops near a location
  * TODO: Replace with actual API call
  */
-async function fetchDrops({ latitude, longitude, radiusKm = 2 }: FetchDropsParams): Promise<Drop[]> {
+async function fetchDrops({ latitude, longitude, radiusKm = 0.5 }: FetchDropsParams): Promise<Drop[]> {
   // Simulate network delay
   await new Promise((resolve) => setTimeout(resolve, 500));
 
@@ -40,7 +40,7 @@ export function useDrops(latitude: number | null, longitude: number | null) {
   const cachedDrops = useDropStore((state) => state.drops);
 
   return useQuery({
-    queryKey: dropKeys.list(latitude ?? 0, longitude ?? 0, 2),
+    queryKey: dropKeys.list(latitude ?? 0, longitude ?? 0, 0.5),
     queryFn: async () => {
       if (latitude === null || longitude === null) {
         return cachedDrops; // Return cached drops if no location
@@ -158,3 +158,4 @@ export function useClaimDrop() {
     },
   });
 }
+

@@ -1,7 +1,7 @@
-import { APPurchaseModal } from "@/src/components/ui/APPurchaseModal";
-import { OnboardingFlow } from "@/src/components/ui/OnboardingFlow";
-import { useWallet } from "@/src/hooks/useWallet";
-import { useUserStore } from "@/src/stores/userStore";
+import { APPurchaseModal } from "@/components/ui/APPurchaseModal";
+import { OnboardingFlow } from "@/components/ui/OnboardingFlow";
+import { useWallet } from "@/hooks/useWallet";
+import { useUserStore } from "@/stores/userStore";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
 import { useState } from "react";
@@ -838,3 +838,4 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 });
+

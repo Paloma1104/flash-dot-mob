@@ -7,9 +7,9 @@ import {
     useClaimAirdrop,
     usePurchaseAP,
     useStartGame
-} from "@/src/hooks/useBlockchain";
-import { useWallet } from "@/src/hooks/useWallet";
-import { useUserStore } from "@/src/stores/userStore";
+} from "@/hooks/useBlockchain";
+import { useWallet } from "@/hooks/useWallet";
+import { useUserStore } from "@/stores/userStore";
 import { useState } from "react";
 import {
     ActivityIndicator,
@@ -276,3 +276,4 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
   },
 });
+

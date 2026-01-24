@@ -1,5 +1,5 @@
-import { locationEngine, LocationMode, UserLocation } from '@/src/services/location/locationEngine';
-import { useUserStore } from '@/src/stores/userStore';
+import { locationEngine, LocationMode, UserLocation } from '@/services/location/locationEngine';
+import { useUserStore } from '@/stores/userStore';
 import { useCallback, useEffect, useState } from 'react';
 
 interface UseLocationReturn {
@@ -124,3 +124,4 @@ export function useLocation(): UseLocationReturn {
     refresh,
   };
 }
+

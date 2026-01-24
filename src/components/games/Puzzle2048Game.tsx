@@ -32,7 +32,9 @@ export function Puzzle2048Game({
   onComplete,
   onCancel,
 }: Puzzle2048GameProps) {
-  const [grid, setGrid] = useState<number[][]>([]);
+  const [grid, setGrid] = useState<number[][]>(
+    Array(GRID_SIZE).fill(null).map(() => Array(GRID_SIZE).fill(0))
+  );
   const [score, setScore] = useState(0);
   const [startTime] = useState(Date.now());
   const [isComplete, setIsComplete] = useState(false);

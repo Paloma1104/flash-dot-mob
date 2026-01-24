@@ -10,31 +10,31 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { GameModal } from "@/src/components/games/GameModal";
+import { GameModal } from "@/components/games/GameModal";
 import {
   MultiplayerGameModal,
   MultiplayerLobby,
-} from "@/src/components/multiplayer";
-import { GlassCard } from "@/src/components/ui/GlassCard";
-import { RadarPulse } from "@/src/components/ui/RadarPulse";
-import { BalanceDisplay } from "@/src/components/wallet/BalanceDisplay";
-import { useLocation } from "@/src/hooks/useLocation";
-import { useGameStore } from "@/src/stores/gameStore";
-import { useMultiplayerStore } from "@/src/stores/multiplayerStore";
-import type { GameDrop } from "@/src/types/game";
-import { GAME_CONFIGS, GameType } from "@/src/types/game";
-import type { MultiplayerStation } from "@/src/types/multiplayer";
+} from "@/components/multiplayer";
+import { GlassCard } from "@/components/ui/GlassCard";
+import { RadarPulse } from "@/components/ui/RadarPulse";
+import { BalanceDisplay } from "@/components/wallet/BalanceDisplay";
+import { useLocation } from "@/hooks/useLocation";
+import { useGameStore } from "@/stores/gameStore";
+import { useMultiplayerStore } from "@/stores/multiplayerStore";
+import type { GameDrop } from "@/types/game";
+import { GAME_CONFIGS, GameType } from "@/types/game";
+import type { MultiplayerStation } from "@/types/multiplayer";
 import {
   generateMockGameDrops,
   getNearbyGameDrops,
-} from "@/src/utils/gameDropGenerator";
+} from "@/utils/gameDropGenerator";
 
 // Check if Mapbox is available (requires native build)
 let FlashMobMapView: React.ComponentType<any> | null = null;
 let mapboxAvailable = false;
 
 try {
-  const MapViewModule = require("@/src/components/map/MapView");
+  const MapViewModule = require("@/components/map/MapView");
   FlashMobMapView = MapViewModule.FlashMobMapView;
   mapboxAvailable = true;
 } catch {
@@ -821,3 +821,4 @@ const styles = StyleSheet.create({
     marginTop: 5,
   },
 });
+

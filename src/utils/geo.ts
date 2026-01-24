@@ -1,4 +1,4 @@
-import type { Drop, GeoJSONDropCollection } from '@/src/types/drop';
+import type { Drop, GeoJSONDropCollection } from '@/types/drop';
 
 /**
  * Generate mock drops around a given location for testing.
@@ -122,3 +122,4 @@ export function calculateBearing(
   const bearing = Math.atan2(y, x);
   return ((bearing * 180) / Math.PI + 360) % 360;
 }
+

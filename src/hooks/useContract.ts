@@ -1,16 +1,16 @@
 import { useCallback, useState } from 'react';
 import {
-    createPublicClient,
-    encodeAbiParameters,
-    encodeFunctionData,
-    formatUnits,
-    http,
-    keccak256,
-    parseAbiParameters
+  createPublicClient,
+  encodeAbiParameters,
+  encodeFunctionData,
+  formatUnits,
+  http,
+  keccak256,
+  parseAbiParameters
 } from 'viem';
 
-import { DROP_CLAIMER_ABI, ERC20_ABI } from '@/src/services/blockchain/abis';
-import { contracts, monadTestnet } from '@/src/services/blockchain/config';
+import { DROP_CLAIMER_ABI, ERC20_ABI } from '@/services/blockchain/abis';
+import { contracts, monadTestnet } from '@/services/blockchain/config';
 
 // Create public client for reading
 const publicClient = createPublicClient({
@@ -46,7 +46,7 @@ export function useContract() {
    * Check if a drop has been claimed on-chain
    */
   const isDropClaimed = useCallback(async (dropId: string): Promise<boolean> => {
-    if (!contracts.dropClaimer) {
+    if (!contracts.flashMob) {
       console.warn('Drop claimer contract not configured');
       return false;
     }
@@ -75,7 +75,7 @@ export function useContract() {
    * Get user's nonce for replay protection
    */
   const getNonce = useCallback(async (userAddress: `0x${string}`): Promise<bigint> => {
-    if (!contracts.dropClaimer) {
+    if (!contracts.flashMob) {
       return 0n;
     }
 
@@ -121,7 +121,7 @@ export function useContract() {
    * Get contract pool balance
    */
   const getPoolBalance = useCallback(async (): Promise<string> => {
-    if (!contracts.dropClaimer) {
+    if (!contracts.flashMob) {
       return '0';
     }
 
@@ -205,3 +205,4 @@ export function useContract() {
     createClaimMessageHash,
   };
 }
+

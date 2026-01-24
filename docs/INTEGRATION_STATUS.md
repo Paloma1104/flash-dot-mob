@@ -155,8 +155,8 @@ Navigate to `/wallet-test` in the app:
 ### 4. Integration in Your Components
 
 ```typescript
-import { useWallet } from '@/src/hooks/useWallet';
-import { useClaimAirdrop } from '@/src/hooks/useBlockchain';
+import { useWallet } from '@/hooks/useWallet';
+import { useClaimAirdrop } from '@/hooks/useBlockchain';
 
 function MyComponent() {
   const { isConnected, connect, address } = useWallet();
@@ -427,3 +427,4 @@ Before deploying to production:
 _Generated: January 22, 2026_  
 _Project: Flash.Mob_  
 _Integration: Privy + Monad + Foundry_
+
