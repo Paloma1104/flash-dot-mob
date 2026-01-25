@@ -175,7 +175,7 @@ export default function WalletScreen() {
         </LinearGradient>
 
         {/* Actions Grid - Fixed black backgrounds */}
-        <View style={styles.actionsGrid}>
+        {/* <View style={styles.actionsGrid}>
           <View style={styles.actionCol}>
             <LinearGradient
               colors={["rgba(0, 217, 255, 0.25)", "rgba(0, 217, 255, 0.08)"]}
@@ -229,10 +229,10 @@ export default function WalletScreen() {
             </LinearGradient>
             <Text style={styles.actionLabel}>Swap</Text>
           </View>
-        </View>
+        </View> */}
 
         {/* Stats Analysis */}
-        <Text style={styles.sectionTitle}>PERFORMANCE</Text>
+        {/* <Text style={styles.sectionTitle}>PERFORMANCE</Text>
         <View style={styles.statsGrid}>
           {statsData.map((stat, index) => (
             <View key={index} style={styles.statCard}>
@@ -240,10 +240,10 @@ export default function WalletScreen() {
               <Text style={styles.statLabel}>{stat.label}</Text>
             </View>
           ))}
-        </View>
+        </View> */}
 
         {/* Recent Activity */}
-        <Text style={styles.sectionTitle}>RECENT ACTIVITY</Text>
+        {/* <Text style={styles.sectionTitle}>RECENT ACTIVITY</Text>
         <View style={styles.transactionsList}>
           {history.length === 0 ? (
             <View style={styles.emptyCard}>
@@ -277,7 +277,7 @@ export default function WalletScreen() {
               </View>
             ))
           )}
-        </View>
+        </View> */}
       </ScrollView>
 
       {/* Unified Action Modal - exclude buyAP since it has its own modal */}
