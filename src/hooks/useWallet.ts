@@ -449,13 +449,14 @@ export function useWallet(): UseWalletReturn {
   );
 
   const sendTransaction = useCallback(
-    async (to: string, data: string): Promise<string | null> => {
+    async (to: string, data: string, value?: string): Promise<string | null> => {
       // Use composite address (wagmi or WalletConnect store)
       const effectiveAddress = address || walletAddress;
 
       console.log("🔵 sendTransaction called");
       console.log("  - to:", to);
       console.log("  - data length:", data.length);
+      console.log("  - value:", value || "0");
       console.log("  - wagmi address:", address);
       console.log("  - store address:", walletAddress);
       console.log("  - effective address:", effectiveAddress);
@@ -611,12 +612,17 @@ export function useWallet(): UseWalletReturn {
 
         // Use the account from the session/provider, fallback to effectiveAddress
         const fromAddress = providerAccounts[0] || effectiveAddress;
-        const txParams = {
+        const txParams: Record<string, string> = {
           from: fromAddress,
           to: to,
-          data: data,
-          // Don't include chainId - WalletConnect handles this internally
+          data: data || "0x",
         };
+
+        // Add value if specified (for MON transfers)
+        if (value) {
+          txParams.value = value;
+          console.log("  - Including value:", value);
+        }
         console.log(
           "  - Transaction params:",
           JSON.stringify(txParams, null, 2),
@@ -634,58 +640,66 @@ export function useWallet(): UseWalletReturn {
           console.log("⚠️ Could not open MetaMask automatically:", err);
         }
 
-        // Send transaction - DO NOT pass chainId as second argument
-        // EthereumProvider uses its internal chainId state
-        const txHash = await Promise.race([
-          provider
-            .request({
+        // Send transaction - WalletConnect v2 may need explicit chainId for some chains
+        // Try with chainId first, fallback without
+        let txHash: string | null = null;
+
+        try {
+          // First try: eth_sendTransaction with chainId in request
+          console.log("📤 Attempting eth_sendTransaction...");
+          txHash = await Promise.race([
+            provider.request({
               method: "eth_sendTransaction",
               params: [txParams],
-            })
-            .then((hash: any) => {
-              console.log("✅ Transaction request accepted by provider");
-              return hash;
             }),
-          new Promise((_, reject) => {
-            // Show reminder after 15 seconds
-            const reminderTimeout = setTimeout(() => {
-              console.log(
-                "⏰ Still waiting... Please check MetaMask app for approval prompt",
-              );
-              Alert.alert(
-                "Waiting for Approval",
-                "Please open MetaMask and approve the transaction",
-                [
-                  {
-                    text: "Open MetaMask",
-                    onPress: () =>
-                      Linking.openURL("metamask://").catch(() => {}),
-                  },
-                  { text: "Waiting...", style: "cancel" },
-                ],
-              );
-            }, 15000);
+            new Promise<string>((_, reject) =>
+              setTimeout(() => reject(new Error("Transaction timeout")), 120000)
+            ),
+          ]) as string;
+          console.log("✅ Transaction request accepted by provider");
+        } catch (firstError: any) {
+          console.log("⚠️ First attempt failed:", firstError?.message);
 
-            // Timeout after 120 seconds
-            setTimeout(() => {
-              clearTimeout(reminderTimeout);
-              reject(
-                new Error(
-                  "Transaction timeout - MetaMask did not respond. Please ensure MetaMask is open and try again.",
+          // If the error is about chainId, try using the session's RPC directly
+          if (firstError?.message?.includes("chainId") || firstError?.message?.includes("Missing or invalid")) {
+            console.log("📤 Retrying with session RPC...");
+            try {
+              // Try using the provider's internal signer if available
+              const accounts = providerAccounts[0] || effectiveAddress;
+
+              // Some WalletConnect sessions need the chain specified differently
+              // Try adding chainId directly to the txParams
+              const txParamsWithChain = {
+                ...txParams,
+                chainId: "0x279f", // 10143 in hex
+              };
+
+              txHash = await Promise.race([
+                provider.request({
+                  method: "eth_sendTransaction",
+                  params: [txParamsWithChain],
+                }),
+                new Promise<string>((_, reject) =>
+                  setTimeout(() => reject(new Error("Transaction timeout")), 120000)
                 ),
-              );
-            }, 120000);
-          }),
-        ]);
-
-        console.log("✅ Transaction approved and sent successfully!");
-        console.log("  - TX Hash:", txHash);
-
-        if (!txHash) {
-          throw new Error("No transaction hash returned");
+              ]) as string;
+              console.log("✅ Second attempt succeeded!");
+            } catch (secondError: any) {
+              console.error("❌ Second attempt also failed:", secondError?.message);
+              throw firstError; // Throw original error
+            }
+          } else {
+            throw firstError;
+          }
         }
 
-        return txHash as string;
+        if (txHash) {
+          console.log("✅ Transaction approved and sent successfully!");
+          console.log("  - TX Hash:", txHash);
+          return txHash;
+        } else {
+          throw new Error("No transaction hash returned");
+        }
       } catch (err) {
         console.log("❌ Transaction error:", err);
         console.log("  - Error type:", typeof err);
@@ -823,10 +837,10 @@ async function switchToCorrectNetwork(
         console.error("❌ Cannot add Anvil local network to MetaMask mobile");
         throw new Error(
           "MetaMask mobile cannot connect to localhost.\n\n" +
-            "Solutions:\n" +
-            "1. Use MetaMask browser extension instead\n" +
-            "2. Deploy contracts to Monad testnet\n" +
-            "3. Expose Anvil via ngrok and use that URL",
+          "Solutions:\n" +
+          "1. Use MetaMask browser extension instead\n" +
+          "2. Deploy contracts to Monad testnet\n" +
+          "3. Expose Anvil via ngrok and use that URL",
         );
       }
 
@@ -892,10 +906,10 @@ async function switchToCorrectNetwork(
         // If add also fails, provide helpful guidance
         throw new Error(
           `Could not switch to ${networkName}.\n\n` +
-            "Please manually add Monad Testnet to your wallet:\n" +
-            "• Chain ID: 10143\n" +
-            "• RPC: https://testnet-rpc.monad.xyz\n" +
-            "• Symbol: MON",
+          "Please manually add Monad Testnet to your wallet:\n" +
+          "• Chain ID: 10143\n" +
+          "• RPC: https://testnet-rpc.monad.xyz\n" +
+          "• Symbol: MON",
         );
       }
     } else if (switchError.code === 4001) {

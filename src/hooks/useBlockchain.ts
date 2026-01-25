@@ -15,7 +15,6 @@ interface TransactionState {
 
 // Treasury address to receive MON payments
 // In production, this should be a secure wallet or contract
-// Uses the deployer address from PRIVATE_KEY if TREASURY not set
 const TREASURY_ADDRESS =
   process.env.EXPO_PUBLIC_TREASURY_ADDRESS ||
   "0xDbb458BF29B7AdDf8AE78D496EC0aF23A0E9B448"; // Fallback to MockMON contract as treasury
@@ -25,7 +24,7 @@ const TREASURY_ADDRESS =
  * Rate: 10 credits per MON (e.g., 5 MON = 50 Credits)
  */
 export function usePurchaseCredits() {
-  const { walletClient, sendTransaction, address } = useWallet();
+  const { sendTransaction, address } = useWallet();
   const [state, setState] = useState<TransactionState>({
     isLoading: false,
     error: null,
@@ -46,32 +45,44 @@ export function usePurchaseCredits() {
       setState({ isLoading: true, error: null, txHash: null });
 
       try {
-        console.log(`💰 Purchasing credits (Amount: ${amountStr || "5.0"} MON)...`);
-        const amount = parseEther(amountStr || "5.0"); // Default 5.0 MON = 50 credits (10 credits per MON)
+        const amount = amountStr || "5.0";
+        console.log(`💰 Purchasing credits: ${amount} MON to treasury...`);
+        console.log(`📍 Treasury address: ${TREASURY_ADDRESS}`);
 
-        const hash = await walletClient?.sendTransaction({
-          to: TREASURY_ADDRESS as `0x${string}`,
-          value: amount,
-          account: address as `0x${string}`,
-          chain: undefined, // Let wallet handle chain
-        });
+        // Convert amount to wei value as hex for the transaction
+        const amountWei = parseEther(amount);
+        const valueHex = `0x${amountWei.toString(16)}`;
+
+        console.log(`💵 Value in wei: ${amountWei}`);
+        console.log(`💵 Value hex: ${valueHex}`);
+
+        // Use sendTransaction from useWallet which handles WalletConnect properly
+        // Pass: to (treasury), data (memo), value (MON amount in wei hex)
+        const hash = await sendTransaction(
+          TREASURY_ADDRESS,
+          "0x", // Empty data for simple transfer
+          valueHex,
+        );
 
         if (hash) {
           console.log("✅ MON sent, tx:", hash);
           setState({ isLoading: false, error: null, txHash: hash });
           return hash;
         } else {
-          throw new Error("Transaction failed");
+          // User cancelled or transaction failed silently
+          console.log("⚠️ Transaction returned null (cancelled or failed)");
+          setState({ isLoading: false, error: null, txHash: null });
+          return null;
         }
       } catch (error) {
         const errorMsg =
           error instanceof Error ? error.message : "Failed to purchase credits";
-        console.error("Purchase error:", error);
+        console.error("❌ Purchase error:", error);
         setState({ isLoading: false, error: errorMsg, txHash: null });
         return null;
       }
     },
-    [address, walletClient],
+    [address, sendTransaction],
   );
 
   return { ...state, purchaseCredits };

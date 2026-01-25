@@ -14,6 +14,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { usePurchaseCredits } from "@/hooks/useBlockchain";
 import { useGameCredits } from "@/hooks/useGameCredits";
 import { useWallet } from "@/hooks/useWallet";
+import React from "react";
 
 export default function MarketScreen() {
   const { isConnected, connect, address } = useWallet();
