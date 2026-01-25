@@ -15,10 +15,8 @@ import {
   MultiplayerGameModal,
   MultiplayerLobby,
 } from "@/components/multiplayer";
-import { GamesCounterBadge } from "@/components/ui/GamesCounterBadge";
 import { GlassCard } from "@/components/ui/GlassCard";
 import { RadarPulse } from "@/components/ui/RadarPulse";
-import { BalanceDisplay } from "@/components/wallet/BalanceDisplay";
 import { useLocation } from "@/hooks/useLocation";
 import { useGameStore } from "@/stores/gameStore";
 import { useMultiplayerStore } from "@/stores/multiplayerStore";
@@ -387,7 +385,6 @@ export default function MapScreen() {
               <Text style={styles.appStatus}>SCANNING...</Text>
             </View>
           }
-          rightContent={<BalanceDisplay variant="compact" />}
         />
 
         <SafeAreaView style={styles.safeArea} edges={["bottom"]}>
@@ -536,20 +533,7 @@ export default function MapScreen() {
         />
       )}
 
-      {/* Compact Header Overlay */}
-      <CompactHeader
-        title="Map"
-        transparent
-        rightContent={<BalanceDisplay variant="compact" />}
-      />
-
-      {/* Nearby Games Counter - Premium Badge */}
-      <GamesCounterBadge
-        count={nearbyGameDrops.length}
-        onPress={() => {
-          // Could open a game list modal
-        }}
-      />
+      {/* Header and Badge removed as per request */}
 
       <GameModal
         visible={gameModalVisible}

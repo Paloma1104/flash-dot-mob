@@ -6,13 +6,13 @@
 import { useCallback, useState } from "react";
 import { encodeFunctionData } from "viem";
 import {
-    AP_TOKEN_ABI,
-    GAME_REWARDS_ABI,
-    getAPTokenService,
+  AP_TOKEN_ABI,
+  GAME_REWARDS_ABI,
+  getAPTokenService,
 } from "../services/blockchain/apTokenService";
 import {
-    FLASH_MOB_ABI,
-    getFlashMobService,
+  FLASH_MOB_ABI,
+  getFlashMobService,
 } from "../services/blockchain/flashMobService";
 import { useWallet } from "./useWallet";
 
@@ -424,7 +424,9 @@ export function useClaimReward() {
         });
 
         if (!response.ok) {
-          throw new Error("Backend signature failed");
+          const errorText = await response.text();
+          console.error("Backend signature error:", errorText);
+          throw new Error(`Backend signature failed: ${errorText}`);
         }
 
         const { signature, monReward, deadline, sessionIdBytes32 } =

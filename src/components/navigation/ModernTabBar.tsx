@@ -88,17 +88,7 @@ export function ModernTabBar({ state, descriptors, navigation }: TabBarProps) {
                 {/* Glow behind active tab */}
                 {isFocused && <View style={styles.activeGlow} />}
 
-                {/* Icon */}
-                <Animated.View
-                  style={[
-                    styles.iconContainer,
-                    { transform: [{ scale: scaleAnims[index] }] },
-                  ]}
-                >
-                  <Text style={[styles.icon, isFocused && styles.iconActive]}>
-                    {config.icon}
-                  </Text>
-                </Animated.View>
+                {/* Icon removed as per request */}
 
                 {/* Label */}
                 <Text style={[styles.label, isFocused && styles.labelActive]}>
