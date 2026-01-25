@@ -63,7 +63,7 @@
         }
       ],
       "@rnmapbox/maps",
-      "@sentry/react-native"
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true,
