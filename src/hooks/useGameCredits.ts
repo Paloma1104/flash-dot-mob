@@ -194,14 +194,29 @@ export function useGameCredits() {
   );
 
   const completeGame = useCallback(
-    async (score: number) => {
+    async (
+      score: number,
+      gameType?: string,
+      difficulty?: string,
+      timeSpent?: number,
+      latitude?: number,
+      longitude?: number
+    ) => {
       if (!address) return { success: false, txHash: null };
 
       try {
         const response = await fetch(`${BACKEND_URL}/api/game/complete`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ address, score }),
+          body: JSON.stringify({
+            address,
+            score,
+            gameType,
+            difficulty,
+            timeSpent,
+            latitude,
+            longitude,
+          }),
         });
 
         const data = await response.json();

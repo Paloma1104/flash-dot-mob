@@ -150,10 +150,17 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
     // 1. Update local store
     completeGame(score, timeSpent);
 
-    // 2. Call backend to award points
-    if (score > 0) {
+    // 2. Call backend to award points and save to Supabase
+    if (score > 0 && gameDrop) {
       const { success, txHash: completeTxHash } =
-        await completeGameOffChain(score);
+        await completeGameOffChain(
+          score,
+          gameDrop.gameType,
+          gameDrop.difficulty,
+          timeSpent,
+          gameDrop.location.latitude,
+          gameDrop.location.longitude
+        );
       if (success && completeTxHash) {
         setTxHash(completeTxHash);
       }

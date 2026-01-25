@@ -9,6 +9,7 @@
  * or being at the correct GPS location.
  */
 
+import { createClient } from "@supabase/supabase-js";
 import cors from "cors";
 import { config } from "dotenv";
 import { ethers } from "ethers";
@@ -24,6 +25,18 @@ const PORT = process.env.BACKEND_PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Supabase client
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+
+const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+  auth: {
+    persistSession: false,
+  },
+});
+
+console.log("📊 Supabase connected:", supabaseUrl);
 
 // Backend signer private key (⚠️ Store securely in production!)
 const SIGNER_PRIVATE_KEY =
@@ -846,6 +859,129 @@ app.get("/api/user/balance/:address", (req: Request, res: Response) => {
   });
 });
 
+/*//////////////////////////////////////////////////////////////
+                    LEADERBOARD ENDPOINTS
+//////////////////////////////////////////////////////////////*/
+
+/**
+ * GET /api/leaderboard/global
+ * Get global leaderboard (top 100 players)
+ */
+app.get("/api/leaderboard/global", async (req: Request, res: Response) => {
+  try {
+    const { data, error } = await supabase
+      .from("leaderboard_global")
+      .select("*")
+      .limit(100);
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      leaderboard: data || [],
+    });
+  } catch (error) {
+    console.error("❌ Error fetching global leaderboard:", error);
+    res.status(500).json({ error: "Failed to fetch leaderboard" });
+  }
+});
+
+/**
+ * GET /api/leaderboard/nearby
+ * Get nearby leaderboard (players within radius)
+ * Query params: lat, lon, radius (default 5000m)
+ */
+app.get("/api/leaderboard/nearby", async (req: Request, res: Response) => {
+  try {
+    const { lat, lon, radius } = req.query;
+
+    if (!lat || !lon) {
+      return res.status(400).json({ error: "Missing latitude or longitude" });
+    }
+
+    const latitude = parseFloat(lat as string);
+    const longitude = parseFloat(lon as string);
+    const radiusMeters = radius ? parseInt(radius as string) : 5000;
+
+    const { data, error } = await supabase.rpc("get_nearby_leaderboard", {
+      user_lat: latitude,
+      user_lon: longitude,
+      radius_meters: radiusMeters,
+    });
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      leaderboard: data || [],
+      radius: radiusMeters,
+      center: { latitude, longitude },
+    });
+  } catch (error) {
+    console.error("❌ Error fetching nearby leaderboard:", error);
+    res.status(500).json({ error: "Failed to fetch nearby leaderboard" });
+  }
+});
+
+/**
+ * GET /api/player/:address
+ * Get player profile and stats
+ */
+app.get("/api/player/:address", async (req: Request, res: Response) => {
+  try {
+    const { address } = req.params;
+
+    const { data, error } = await supabase
+      .from("players")
+      .select("*")
+      .eq("wallet_address", address.toLowerCase())
+      .single();
+
+    if (error) {
+      if (error.code === "PGRST116") {
+        return res.status(404).json({ error: "Player not found" });
+      }
+      throw error;
+    }
+
+    res.json({
+      success: true,
+      player: data,
+    });
+  } catch (error) {
+    console.error("❌ Error fetching player:", error);
+    res.status(500).json({ error: "Failed to fetch player" });
+  }
+});
+
+/**
+ * GET /api/player/:address/sessions
+ * Get player's recent game sessions
+ */
+app.get("/api/player/:address/sessions", async (req: Request, res: Response) => {
+  try {
+    const { address } = req.params;
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+
+    const { data, error } = await supabase
+      .from("game_sessions")
+      .select("*")
+      .eq("wallet_address", address.toLowerCase())
+      .order("created_at", { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+
+    res.json({
+      success: true,
+      sessions: data || [],
+    });
+  } catch (error) {
+    console.error("❌ Error fetching game sessions:", error);
+    res.status(500).json({ error: "Failed to fetch game sessions" });
+  }
+});
+
 /**
  * POST /api/game/complete
  * End game and award points
@@ -853,7 +989,7 @@ app.get("/api/user/balance/:address", (req: Request, res: Response) => {
  */
 app.post("/api/game/complete", async (req: Request, res: Response) => {
   try {
-    const { address, score } = req.body;
+    const { address, score, gameType, difficulty, timeSpent, latitude, longitude } = req.body;
     if (!address || score === undefined)
       return res.status(400).json({ error: "Missing address or score" });
 
@@ -863,7 +999,35 @@ app.post("/api/game/complete", async (req: Request, res: Response) => {
     // 1. Award Points (Off-Chain)
     updateUser(address, { points: user.points + pointsEarned });
 
-    // 2. Broadcast Virtual TX (On-Chain)
+    // 2. Save to Supabase
+    try {
+      const { data: sessionData, error: sessionError } = await supabase
+        .from("game_sessions")
+        .insert({
+          wallet_address: address.toLowerCase(),
+          game_type: gameType || "UNKNOWN",
+          difficulty: difficulty || "medium",
+          score: score,
+          points_earned: pointsEarned,
+          credits_spent: 5,
+          time_spent: timeSpent || null,
+          latitude: latitude || null,
+          longitude: longitude || null,
+        })
+        .select()
+        .single();
+
+      if (sessionError) {
+        console.error("❌ Supabase error:", sessionError);
+      } else {
+        console.log("✅ Game session saved to Supabase:", sessionData.id);
+      }
+    } catch (dbError) {
+      console.error("❌ Database error:", dbError);
+      // Continue even if DB fails
+    }
+
+    // 3. Broadcast Virtual TX (On-Chain)
     console.log(`📤 Broadcasting Game Complete TX to ${address}...`);
     const tx = await signer.sendTransaction({
       to: address,

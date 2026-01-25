@@ -2,21 +2,25 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState } from "react";
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useGameCredits } from "@/hooks/useGameCredits";
 import { useWallet } from "@/hooks/useWallet";
 import React from "react";
+import { LeaderboardScreen } from "../../src/components/leaderboard/LeaderboardScreen";
+
+type TabMode = "market" | "leaderboard";
 
 export default function MarketScreen() {
   const { isConnected, connect, address } = useWallet();
+  const [mode, setMode] = useState<TabMode>("market");
 
   // Use backend-only credit system
   const {
@@ -102,7 +106,31 @@ export default function MarketScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
-      <ScrollView contentContainerStyle={styles.content}>
+      {/* Tab Selector */}
+      <View style={styles.tabSelector}>
+        <TouchableOpacity
+          style={[styles.tab, mode === "market" && styles.tabActive]}
+          onPress={() => setMode("market")}
+        >
+          <Text style={[styles.tabText, mode === "market" && styles.tabTextActive]}>
+            🛒 Market
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, mode === "leaderboard" && styles.tabActive]}
+          onPress={() => setMode("leaderboard")}
+        >
+          <Text style={[styles.tabText, mode === "leaderboard" && styles.tabTextActive]}>
+            🏆 Leaderboard
+          </Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Content */}
+      {mode === "leaderboard" ? (
+        <LeaderboardScreen />
+      ) : (
+        <ScrollView contentContainerStyle={styles.content}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Marketplace</Text>
@@ -221,6 +249,7 @@ export default function MarketScreen() {
           ))}
         </View>
       </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
@@ -229,6 +258,34 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#000",
+  },
+  tabSelector: {
+    flexDirection: "row",
+    padding: 20,
+    paddingBottom: 0,
+    gap: 12,
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.1)",
+  },
+  tabActive: {
+    backgroundColor: "rgba(108, 92, 231, 0.2)",
+    borderColor: "#6C5CE7",
+  },
+  tabText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "rgba(255, 255, 255, 0.5)",
+    textAlign: "center",
+  },
+  tabTextActive: {
+    color: "#6C5CE7",
   },
   content: {
     padding: 20,

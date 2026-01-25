@@ -30,12 +30,12 @@ export default function TabLayout() {
           title: "Wallet",
         }}
       />
-      {/* <Tabs.Screen
+      <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
         }}
-      /> */}
+      />
     </Tabs>
   );
 }
