@@ -162,16 +162,30 @@ Flash.Mob features a complete **play-to-earn** economy powered by smart contract
 
 ## 🚀 Deployed Contracts
 
-**Network:** Monad Testnet (Chain ID: 10143)
+**Network:** Monad Testnet (Chain ID: 10143)  
+**RPC URL:** https://testnet-rpc.monad.xyz  
+**Explorer:** https://explorer.testnet.monad.xyz
 
-| Contract        | Address | Description                      |
-| --------------- | ------- | -------------------------------- |
-| **MockMON**     | `TBD`   | ERC20 test token                 |
-| **FlashMobV2**  | `TBD`   | Location-based drop claiming     |
-| **APToken**     | `TBD`   | Activity Points (game currency)  |
-| **GameRewards** | `TBD`   | Game session & reward management |
+| Contract                 | Address                                      | Description                      |
+| ------------------------ | -------------------------------------------- | -------------------------------- |
+| **MockMON**              | `0xDbb458BF29B7AdDf8AE78D496EC0aF23A0E9B448` | ERC20 test token                 |
+| **APToken**              | `0xee3100f0e16c02f5B737fb27398540Fbee051072` | Activity Points (game currency)  |
+| **GameRewards**          | `0x22b9152E9878C1EFE498479718f8f2b62b1b586E` | Game session & reward management |
+| **FlashMobV2**           | `0x09F48a7E427AA0331A67fE2f8B6066d673172F12` | Location-based drop claiming     |
+| **CreditsMarketplace**   | `0xc078f3b67A684fe0f1be2440551F3F7de6F2ae63` | Credits trading marketplace      |
 
-> Deploy contracts with: `npm run contracts:deploy:testnet`
+### Verify Contracts
+
+```bash
+# View on Monad Testnet Explorer
+https://explorer.testnet.monad.xyz/address/0xDbb458BF29B7AdDf8AE78D496EC0aF23A0E9B448
+https://explorer.testnet.monad.xyz/address/0xee3100f0e16c02f5B737fb27398540Fbee051072
+https://explorer.testnet.monad.xyz/address/0x22b9152E9878C1EFE498479718f8f2b62b1b586E
+https://explorer.testnet.monad.xyz/address/0x09F48a7E427AA0331A67fE2f8B6066d673172F12
+https://explorer.testnet.monad.xyz/address/0xc078f3b67A684fe0f1be2440551F3F7de6F2ae63
+```
+
+> ✅ All contracts successfully deployed and verified on Monad Testnet
 
 ---
 
@@ -371,19 +385,34 @@ flash.mob/
 
 ---
 
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+### Development Setup
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 🐛 Bug Reports & Feature Requests
+
+Found a bug or have an idea? [Open an issue](https://github.com/yourname/flash.mob/issues)
+
 ## 👥 Team
 
 Built with ❤️ for **LNM Hacks 8.0** on the **Monad Track**
 
+## 🙏 Acknowledgments
+
+- **Monad Labs** - For building the fastest EVM blockchain
+- **Expo Team** - For the amazing React Native framework
+- **Mapbox** - For beautiful, performant maps
+- **OpenZeppelin** - For secure smart contract libraries
+
 ---
-
-## 📄 License
-
-MIT License - see [LICENSE](LICENSE)
-
----
-
-<div align="center">
 
 **[⬆ Back to Top](#-flashmob)**
 
