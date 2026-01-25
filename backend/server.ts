@@ -127,9 +127,9 @@ function verifyLocation(
   const a =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos((userLat * Math.PI) / 180) *
-      Math.cos((dropLat * Math.PI) / 180) *
-      Math.sin(dLon / 2) *
-      Math.sin(dLon / 2);
+    Math.cos((dropLat * Math.PI) / 180) *
+    Math.sin(dLon / 2) *
+    Math.sin(dLon / 2);
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   const distance = R * c;
@@ -905,8 +905,8 @@ wss.on("connection", (ws: WebSocket) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`\n✅ Flash.Mob Backend running on http://localhost:${PORT}`);
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`\n✅ Flash.Mob Backend running on http://0.0.0.0:${PORT}`);
   console.log(`\n📋 Available endpoints:`);
   console.log(`   POST /api/sign-reward - Sign game reward claims`);
   console.log(`   POST /api/sign-drop - Sign location drop claims`);

@@ -92,16 +92,22 @@ export default function MarketScreen() {
       return;
     }
 
+    console.log(`🛒 Starting purchase: ${amount} credits for ${cost} MON`);
+
     try {
       // Step 1: Real On-Chain Payment (User pays MON)
-      // "Make it possible on chain"
       const txHash = await purchaseCredits(cost.toString());
 
       if (txHash) {
+        console.log(`✅ TX Hash received: ${txHash}`);
+
         // Step 2: Backend Verification & Credit Top-up
         const { success } = await buyCredits(txHash);
 
         if (success) {
+          console.log(`✅ Credits purchased successfully!`);
+          // Refresh balance to show new credits
+          await fetchBalance();
           setSuccessMsg(`Purchased ${amount} Credits!`);
           setTimeout(() => setSuccessMsg(null), 3000);
         } else {
@@ -111,11 +117,12 @@ export default function MarketScreen() {
             "Payment sent but credit update pending. Please check balance shortly.",
           );
         }
+      } else {
+        console.log("❌ Purchase cancelled or failed");
       }
-      // If purchaseCredits returns null, it handled the error/cancellation already
     } catch (error) {
       console.error("Purchase error:", error);
-      Alert.alert("Error", "Purchase failed.");
+      Alert.alert("Error", "Purchase failed. Please try again.");
     }
   };
 
