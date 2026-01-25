@@ -63,6 +63,32 @@ const getFlashMobDomain = () => ({
   verifyingContract: FLASH_MOB_ADDRESS as `0x${string}`,
 });
 
+/*//////////////////////////////////////////////////////////////
+                    USER STORE (In-Memory)
+//////////////////////////////////////////////////////////////*/
+
+interface UserData {
+  credits: number; // Purchased with MON
+  points: number; // Won from games
+}
+
+// In production, use Redis or Postgres
+const users = new Map<string, UserData>();
+
+const getUser = (address: string): UserData => {
+  const key = address.toLowerCase();
+  if (!users.has(key)) {
+    users.set(key, { credits: 0, points: 0 });
+  }
+  return users.get(key)!;
+};
+
+const updateUser = (address: string, data: Partial<UserData>) => {
+  const key = address.toLowerCase();
+  const current = getUser(key);
+  users.set(key, { ...current, ...data });
+};
+
 /**
  * Calculate MON reward based on score and difficulty
  */
@@ -112,17 +138,69 @@ function verifyLocation(
 }
 
 /**
- * POST /api/sign-reward
- *
- * Sign a game reward claim
- * Body: {
- *   sessionId: string,
- *   player: string (address),
- *   score: number,
- *   difficulty: 'easy' | 'medium' | 'hard',
- *   gameType: string
- * }
+ * POST /api/credits/buy
+ * Verify purchase transaction and add credits
+ * Rate: 5 MON = 50 Credits
  */
+app.post("/api/credits/buy", async (req: Request, res: Response) => {
+  try {
+    const { txHash, address } = req.body;
+
+    if (!txHash || !address) {
+      return res.status(400).json({ error: "Missing txHash or address" });
+    }
+
+    console.log(`💰 Verifying purchase tx: ${txHash} for ${address}`);
+
+    // Connect to Monad Testnet provider
+    const provider = new ethers.JsonRpcProvider(
+      process.env.EXPO_PUBLIC_RPC_URL,
+    );
+    const tx = await provider.getTransaction(txHash);
+    const receipt = await provider.getTransactionReceipt(txHash);
+
+    if (!tx || !receipt) {
+      return res.status(400).json({ error: "Transaction not found" });
+    }
+
+    if (receipt.status !== 1) {
+      return res.status(400).json({ error: "Transaction failed" });
+    }
+
+    // Verify sender
+    if (tx.from.toLowerCase() !== address.toLowerCase()) {
+      return res.status(400).json({ error: "Transaction sender mismatch" });
+    }
+
+    // Verify amount (5 MON = 5 * 10^18 wei)
+    // Accept anything >= 5 MON
+    const minAmount = ethers.parseEther("5.0");
+    if (tx.value < minAmount) {
+      return res
+        .status(400)
+        .json({ error: "Insufficient MON sent. Min 5 MON required." });
+    }
+
+    // Calculate credits: 50 Credits for 5 MON (1 MON = 10 Credits)
+    const monSent = Number(ethers.formatEther(tx.value));
+    const creditsToAdd = Math.floor(monSent * 10);
+
+    const user = getUser(address);
+    updateUser(address, { credits: user.credits + creditsToAdd });
+
+    console.log(`✅ Added ${creditsToAdd} credits to ${address}`);
+
+    res.json({
+      success: true,
+      creditsAdded: creditsToAdd,
+      newBalance: user.credits + creditsToAdd,
+    });
+  } catch (error) {
+    console.error("❌ Buy credits error:", error);
+    res.status(500).json({ error: "Failed to process purchase" });
+  }
+});
+
 app.post("/api/sign-reward", async (req: Request, res: Response) => {
   try {
     console.log(
@@ -499,6 +577,29 @@ app.post("/api/station/join", async (req: Request, res: Response) => {
  */
 app.post("/api/station/leave", async (req: Request, res: Response) => {
   const { stationId, player } = req.body;
+  /**
+   * POST /api/game/start
+   * Start game and deduct credits
+   * Cost: 5 Credits
+   */
+  app.post("/api/game/start", (req: Request, res: Response) => {
+    const { address, gameType } = req.body;
+    if (!address) return res.status(400).json({ error: "Missing address" });
+
+    const user = getUser(address);
+    const cost = 5;
+
+    if (user.credits < cost) {
+      return res.status(402).json({ error: "Insufficient credits" });
+    }
+
+    updateUser(address, { credits: user.credits - cost });
+    console.log(
+      `🎮 Game started for ${address}. deducted ${cost} credits. New balance: ${user.credits - cost}`,
+    );
+
+    res.json({ success: true, newBalance: user.credits - cost });
+  });
 
   const state = stationStates.get(stationId);
   if (!state) {
@@ -684,6 +785,53 @@ server.listen(PORT, () => {
   console.log(`   POST /api/station/complete - Submit score`);
   console.log(`   WS   /ws - WebSocket for real-time updates`);
   console.log(`   GET  /health - Health check\n`);
+});
+
+/**
+ * POST /api/game/complete
+ * End game and award points
+ * Reward: Score / 10 points
+ */
+app.post("/api/game/complete", (req: Request, res: Response) => {
+  const { address, score } = req.body;
+  if (!address || score === undefined)
+    return res.status(400).json({ error: "Missing address or score" });
+
+  const pointsEarned = Math.floor(score / 10);
+  const user = getUser(address);
+
+  updateUser(address, { points: user.points + pointsEarned });
+  console.log(
+    `🏆 Game completed for ${address}. Score: ${score}. Points earned: ${pointsEarned}`,
+  );
+
+  res.json({
+    success: true,
+    pointsEarned,
+    newPoints: user.points + pointsEarned,
+  });
+});
+
+/**
+ * GET /api/user/balance/:address
+ * Get current credits and points
+ */
+app.get("/api/user/balance/:address", (req: Request, res: Response) => {
+  const { address } = req.params;
+  const user = getUser(address);
+  res.json({ success: true, ...user });
+});
+
+/**
+ * POST /api/credits/cashout
+ * Convert credits/points to MON
+ * (Placeholder for Web3 interaction #2)
+ */
+app.post("/api/credits/cashout", async (req: Request, res: Response) => {
+  const { address } = req.body;
+  // TODO: Implement MON transfer logic or signature generation
+  console.log(`💸 Cashout requested for ${address}`);
+  res.json({ success: true, message: "Cashout feature coming soon" });
 });
 
 export default app;

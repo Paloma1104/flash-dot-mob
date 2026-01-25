@@ -2,32 +2,31 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import {
-    Alert,
-    Modal,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
 
+import { useGameCredits } from "@/hooks/useGameCredits";
+import { useWallet } from "@/hooks/useWallet";
 import { useGameStore } from "@/stores/gameStore";
-import { useUserStore } from "@/stores/userStore";
 import type { GameDrop } from "@/types/game";
 import { GAME_CONFIGS, GameType } from "@/types/game";
-import { useStartGame, useClaimReward } from "@/hooks/useBlockchain";
-import { useWallet } from "@/hooks/useWallet";
 import {
-    ColorSequenceGame,
-    MathChallengeGame,
-    MemoryMatchGame,
-    PatternLockGame,
-    Puzzle2048Game,
-    SimonSaysGame,
-    SpotDifferenceGame,
-    SudokuGame,
-    TicTacToeGame,
-    WordScrambleGame,
+  ColorSequenceGame,
+  MathChallengeGame,
+  MemoryMatchGame,
+  PatternLockGame,
+  Puzzle2048Game,
+  SimonSaysGame,
+  SpotDifferenceGame,
+  SudokuGame,
+  TicTacToeGame,
+  WordScrambleGame,
 } from "./index";
 
 interface GameModalProps {
@@ -43,112 +42,71 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
     score: number;
     timeSpent: number;
   } | null>(null);
+
   const { startGame, completeGame, cancelGame } = useGameStore();
-  const { apBalance } = useUserStore();
   const { isConnected, address } = useWallet();
-  const { startGame: startGameOnChain, isLoading: isStarting, error: startError } = useStartGame();
-  const { claimReward, isLoading: isClaiming, error: claimError } = useClaimReward();
+  const {
+    startGame: startGameOffChain,
+    completeGame: completeGameOffChain,
+    isLoading: isStarting,
+    error: startError,
+  } = useGameCredits();
+
+  // Legacy variables set to null/false for compatibility if needed
+  const isClaiming = false;
 
   if (!gameDrop) return null;
 
   const config = GAME_CONFIGS[gameDrop.gameType];
-  const hasEnoughAP = apBalance >= gameDrop.apCost;
 
   const handleStartGame = async () => {
     // Check wallet connection
     if (!isConnected || !address) {
-      Alert.alert("Wallet Not Connected", "Please connect your wallet to play games.");
-      return;
-    }
-
-    // Check AP balance
-    if (!hasEnoughAP) {
       Alert.alert(
-        "Insufficient AP Tokens",
-        `You need ${gameDrop.apCost} AP to play this game. You have ${apBalance.toFixed(0)} AP.\n\nPurchase more AP tokens to continue.`,
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Buy AP",
-            onPress: () => {
-              console.log("Open AP purchase modal");
-            },
-          },
-        ],
+        "Wallet Not Connected",
+        "Please connect your wallet to play games.",
       );
       return;
     }
 
     try {
-      // Call blockchain to burn AP and start game
-      const txHash = await startGameOnChain(
-        gameDrop.id, // sessionId
-        gameDrop.gameType,
-        gameDrop.difficulty
-      );
+      // Call backend to deduct credits
+      const success = await startGameOffChain(gameDrop.gameType);
 
-      if (txHash) {
-        // Update local state only after blockchain success
-        const success = await startGame(gameDrop);
-        if (success) {
+      if (success) {
+        // Update local state
+        const localSuccess = await startGame(gameDrop);
+        if (localSuccess) {
           setGameStarted(true);
         }
+      } else {
+        Alert.alert(
+          "Start Failed",
+          startError || "Insufficient credits (5 needed). Please buy more.",
+        );
       }
     } catch (error) {
       console.error("Failed to start game:", error);
       Alert.alert(
-        "Transaction Failed", 
-        startError || "Failed to start game on blockchain. Please try again."
+        "Start Failed",
+        startError || "Failed to start game. Please try again.",
       );
     }
   };
 
-  const handleCompleteGame = (score: number, timeSpent: number = 0) => {
+  const handleCompleteGame = async (score: number, timeSpent: number = 0) => {
     setGameResults({ score, timeSpent });
+
+    // 1. Update local store
     completeGame(score, timeSpent);
+
+    // 2. Call backend to award points
+    if (score > 0) {
+      await completeGameOffChain(score);
+    }
+
     setGameStarted(false);
     setShowResults(true);
-    // Don't close immediately - show results first
-  };
-
-  const handleClaimRewards = async () => {
-    if (!gameResults || !gameDrop) {
-      onClose();
-      return;
-    }
-
-    // Only claim if player won
-    if (gameResults.score <= 0) {
-      setShowResults(false);
-      setGameResults(null);
-      onClose();
-      return;
-    }
-
-    try {
-      // Call backend to get signature, then claim on-chain
-      const txHash = await claimReward(
-        gameDrop.id, // sessionId
-        gameResults.score,
-        gameDrop.difficulty,
-        gameDrop.gameType
-      );
-
-      if (txHash) {
-        console.log("✅ Rewards claimed on-chain:", txHash);
-        Alert.alert("Success!", `Earned ${gameDrop.rewardAmount} AP Tokens!\n\nTransaction: ${txHash.slice(0, 10)}...`);
-      }
-    } catch (error) {
-      console.error("Failed to claim rewards:", error);
-      Alert.alert(
-        "Claim Failed",
-        claimError || "Failed to claim rewards. Please try again."
-      );
-    } finally {
-      setShowResults(false);
-      setGameResults(null);
-      onClose();
-    }
   };
 
   const handleCancelGame = () => {
@@ -206,7 +164,7 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
   // Results Screen
   if (showResults && gameResults) {
     const didWin = gameResults.score > 0;
-    const rewardEarned = didWin ? gameDrop.rewardAmount : 0;
+    const pointsEarned = didWin ? Math.floor(gameResults.score / 10) : 0;
 
     return (
       <Modal visible={visible} transparent animationType="fade">
@@ -238,7 +196,8 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
                 <View style={styles.statBox}>
                   <Text style={styles.statLabel}>Time</Text>
                   <Text style={styles.statValue}>
-                    {Math.floor(gameResults.timeSpent / 60)}:{String(gameResults.timeSpent % 60).padStart(2, '0')}
+                    {Math.floor(gameResults.timeSpent / 60)}:
+                    {String(gameResults.timeSpent % 60).padStart(2, "0")}
                   </Text>
                 </View>
               </View>
@@ -247,11 +206,11 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
                 <View style={styles.rewardSection}>
                   <Text style={styles.rewardLabel}>Rewards Earned</Text>
                   <View style={styles.rewardAmount}>
-                    <Text style={styles.rewardValue}>+{rewardEarned}</Text>
-                    <Text style={styles.rewardToken}>AP</Text>
+                    <Text style={styles.rewardValue}>+{pointsEarned}</Text>
+                    <Text style={styles.rewardToken}>POINTS</Text>
                   </View>
                   <Text style={styles.rewardSubtext}>
-                    Added to your balance
+                    Added to your leaderboard score
                   </Text>
                 </View>
               )}
@@ -259,16 +218,12 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
               {!didWin && (
                 <View style={styles.tryAgainSection}>
                   <Text style={styles.tryAgainText}>
-                    💪 Keep practicing to earn MON!
+                    💪 Keep practicing to earn points!
                   </Text>
                 </View>
               )}
 
-              <TouchableOpacity
-                style={styles.claimButton}
-                onPress={handleClaimRewards}
-                disabled={isClaiming}
-              >
+              <TouchableOpacity style={styles.claimButton} onPress={onClose}>
                 <View
                   style={[
                     styles.claimGradient,
@@ -276,7 +231,7 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
                   ]}
                 >
                   <Text style={styles.claimButtonText}>
-                    {didWin ? "✨ Claim Rewards" : "← Back to Map"}
+                    {didWin ? "Continue" : "Back to Map"}
                   </Text>
                 </View>
               </TouchableOpacity>
@@ -336,31 +291,15 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
 
                 <View style={styles.infoRow}>
                   <Text style={styles.infoLabel}>🎟️ Cost to Play:</Text>
-                  <Text
-                    style={[
-                      styles.infoValue,
-                      { color: hasEnoughAP ? "#4ECDC4" : "#FF6B9D" },
-                    ]}
-                  >
-                    {gameDrop.apCost} AP
+                  <Text style={[styles.infoValue, { color: "#4ECDC4" }]}>
+                    5 CREDITS
                   </Text>
                 </View>
 
                 <View style={styles.infoRow}>
                   <Text style={styles.infoLabel}>💰 Reward:</Text>
-                  <Text style={styles.infoValue}>
-                    {gameDrop.rewardAmount} AP
-                  </Text>
+                  <Text style={styles.infoValue}>POINTS</Text>
                 </View>
-
-                {!hasEnoughAP && (
-                  <View style={styles.warningBox}>
-                    <Text style={styles.warningText}>
-                      ⚠️ You need {gameDrop.apCost - apBalance} more AP tokens
-                      to play
-                    </Text>
-                  </View>
-                )}
               </View>
 
               <View style={styles.difficultyInfo}>
@@ -373,7 +312,7 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
               <View style={styles.rulesSection}>
                 <Text style={styles.rulesTitle}>How to Play:</Text>
                 <Text style={styles.rulesText}>
-                  • Complete the challenge to earn MON tokens{"\n"}• Higher
+                  • Complete the challenge to earn Points{"\n"}• Higher
                   difficulty = More rewards{"\n"}• Faster completion = Bonus
                   points{"\n"}• You can only play each game once!
                 </Text>
@@ -384,7 +323,7 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
               <TouchableOpacity
                 style={styles.playButton}
                 onPress={handleStartGame}
-                disabled={isStarting || !hasEnoughAP}
+                disabled={isStarting}
               >
                 <LinearGradient
                   colors={[config.color, "#836EF9"]}
@@ -394,7 +333,7 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
                     {isStarting ? "⏳ Starting..." : "🎮 Start Game"}
                   </Text>
                   <Text style={styles.playButtonSubtext}>
-                    {isStarting ? "Burning AP on-chain..." : `Win ${gameDrop.rewardAmount} AP`}
+                    {isStarting ? "Processing..." : `Cost: 5 Credits`}
                   </Text>
                 </LinearGradient>
               </TouchableOpacity>
@@ -716,4 +655,3 @@ const styles = StyleSheet.create({
     color: "#FFF",
   },
 });
-

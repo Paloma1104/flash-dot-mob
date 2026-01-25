@@ -5,7 +5,6 @@ import { useDropStore } from "@/stores/dropStore";
 import { useUserStore } from "@/stores/userStore";
 import * as Haptics from "expo-haptics";
 import { useCallback, useState } from "react";
-import { useClaimDrop } from "./useBlockchain";
 import { useWallet } from "./useWallet";
 
 interface ClaimResult {
@@ -33,7 +32,6 @@ export function useClaim(): UseClaimReturn {
   const { addPendingBalance, confirmPendingBalance, revertPendingBalance } =
     useUserStore();
   const { drops, markDropClaimed, setNearbyDrop } = useDropStore();
-  const { claimDrop: claimDropOnChain } = useClaimDrop();
 
   const claim = useCallback(
     async (dropId: string): Promise<ClaimResult> => {
@@ -96,42 +94,11 @@ export function useClaim(): UseClaimReturn {
         addPendingBalance(drop.amount);
         markDropClaimed(dropId);
 
-        // 7. Call backend to verify GPS and get EIP-712 signature
-        const backendUrl =
-          process.env.EXPO_PUBLIC_BACKEND_URL || "http://localhost:3001";
-        const response = await fetch(`${backendUrl}/api/sign-drop`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            dropId,
-            claimer: address,
-            amount: drop.amount,
-            userLat: location.latitude,
-            userLon: location.longitude,
-            dropLat: drop.latitude,
-            dropLon: drop.longitude,
-          }),
-        });
+        // Simulate backend delay
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || "Backend verification failed");
-        }
-
-        const { signature, nonce, deadline, dropIdBytes32 } =
-          await response.json();
-
-        // 8. Submit blockchain transaction
-        const txHash = await claimDropOnChain(
-          dropIdBytes32,
-          BigInt(drop.amount) * BigInt(10 ** 18), // Convert to wei
-          BigInt(deadline),
-          signature as `0x${string}`,
-        );
-
-        if (!txHash) {
-          throw new Error("Blockchain transaction failed");
-        }
+        // TODO: Implement backend integration for drop claims similar to game credits
+        // For now we will support it via optimistic UI only or fail
 
         // 9. Confirm the optimistic update
         confirmPendingBalance(drop.amount);
@@ -141,7 +108,7 @@ export function useClaim(): UseClaimReturn {
           Haptics.NotificationFeedbackType.Success,
         );
 
-        const result = { success: true, txHash };
+        const result = { success: true, txHash: "off-chain-claim" };
         setLastClaimResult(result);
         return result;
       } catch (err) {
@@ -170,7 +137,6 @@ export function useClaim(): UseClaimReturn {
       addPendingBalance,
       markDropClaimed,
       confirmPendingBalance,
-      claimDropOnChain,
       revertPendingBalance,
     ],
   );
@@ -181,4 +147,3 @@ export function useClaim(): UseClaimReturn {
     lastClaimResult,
   };
 }
-

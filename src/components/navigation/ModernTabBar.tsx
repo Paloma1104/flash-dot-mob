@@ -2,6 +2,7 @@
  * Modern Tab Bar Component
  * Full-width tab bar with glow effects and smooth animations
  */
+import { Ionicons } from "@expo/vector-icons";
 import { BlurView } from "expo-blur";
 import * as Haptics from "expo-haptics";
 import React, { useRef } from "react";
@@ -21,10 +22,13 @@ interface TabBarProps {
   navigation: any;
 }
 
-const TAB_CONFIG: Record<string, { icon: string; label: string }> = {
-  index: { icon: "🗺️", label: "Map" },
-  wallet: { icon: "💳", label: "Wallet" },
-  profile: { icon: "👤", label: "Profile" },
+const TAB_CONFIG: Record<
+  string,
+  { icon: keyof typeof Ionicons.glyphMap; label: string }
+> = {
+  index: { icon: "map", label: "Map" },
+  wallet: { icon: "wallet", label: "Wallet" },
+  profile: { icon: "person", label: "Profile" },
 };
 
 export function ModernTabBar({ state, descriptors, navigation }: TabBarProps) {
@@ -65,16 +69,20 @@ export function ModernTabBar({ state, descriptors, navigation }: TabBarProps) {
 
   return (
     <View
-      style={[styles.wrapper, { paddingBottom: Math.max(insets.bottom, 8) }]}
+      style={[styles.wrapper, { paddingBottom: Math.max(insets.bottom, 20) }]}
     >
-      <BlurView intensity={80} tint="dark" style={styles.container}>
+      <BlurView intensity={95} tint="dark" style={styles.container}>
         <View style={styles.tabRow}>
           {state.routes.map((route: any, index: number) => {
             const isFocused = state.index === index;
             const config = TAB_CONFIG[route.name] || {
-              icon: "📍",
+              icon: "ellipse",
               label: route.name,
             };
+
+            const iconName = isFocused
+              ? config.icon
+              : (`${config.icon}-outline` as any);
 
             return (
               <TouchableOpacity
@@ -88,7 +96,18 @@ export function ModernTabBar({ state, descriptors, navigation }: TabBarProps) {
                 {/* Glow behind active tab */}
                 {isFocused && <View style={styles.activeGlow} />}
 
-                {/* Icon removed as per request */}
+                <Animated.View
+                  style={[
+                    styles.iconContainer,
+                    { transform: [{ scale: scaleAnims[index] }] },
+                  ]}
+                >
+                  <Ionicons
+                    name={iconName}
+                    size={24}
+                    color={isFocused ? "#FFF" : "rgba(255, 255, 255, 0.5)"}
+                  />
+                </Animated.View>
 
                 {/* Label */}
                 <Text style={[styles.label, isFocused && styles.labelActive]}>
@@ -107,64 +126,57 @@ const styles = StyleSheet.create({
   wrapper: {
     position: "absolute",
     bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 12,
+    left: 20,
+    right: 20,
   },
   container: {
-    borderRadius: 24,
+    borderRadius: 35,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(131, 110, 249, 0.3)",
-    backgroundColor: "rgba(13, 13, 15, 0.95)",
+    borderColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "rgba(20, 20, 25, 0.85)",
     ...Platform.select({
       ios: {
-        shadowColor: "#836EF9",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25,
-        shadowRadius: 12,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.3,
+        shadowRadius: 20,
       },
       android: {
-        elevation: 8,
+        elevation: 10,
       },
     }),
   },
   tabRow: {
     flexDirection: "row",
-    height: 70,
+    height: 65,
+    alignItems: "center",
   },
   tab: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    paddingVertical: 10,
-    position: "relative",
+    height: "100%",
   },
   activeGlow: {
     position: "absolute",
-    top: 8,
-    left: "20%",
-    right: "20%",
-    height: 35,
-    backgroundColor: "rgba(131, 110, 249, 0.2)",
-    borderRadius: 18,
+    width: 50,
+    height: 50,
+    backgroundColor: "rgba(131, 110, 249, 0.25)",
+    borderRadius: 25,
   },
   iconContainer: {
     marginBottom: 4,
-  },
-  icon: {
-    fontSize: 24,
-  },
-  iconActive: {
-    fontSize: 26,
+    alignItems: "center",
+    justifyContent: "center",
   },
   label: {
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "600",
     color: "rgba(255, 255, 255, 0.5)",
   },
   labelActive: {
-    color: "#836EF9",
+    color: "#FFF",
     fontWeight: "700",
   },
 });
