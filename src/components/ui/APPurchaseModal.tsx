@@ -31,14 +31,14 @@ export function APPurchaseModal({ visible, onClose }: APPurchaseModalProps) {
     error: verifyError,
   } = useGameCredits();
 
-  // Single fixed package: 5 MON = 50 Credits
-  const MON_AMOUNT = "5.0";
+  // Single fixed package: 1 MON = 50 Credits
+  const MON_AMOUNT = "1.0";
   const CREDITS_AMOUNT = 50;
 
   const handlePurchase = async () => {
     try {
       // Step 1: Send MON
-      // purchaseCredits hook handles the wallet tx for 5 MON
+      // purchaseCredits hook handles the wallet tx for 1 MON
       const txHash = await purchaseCredits();
 
       if (txHash) {
@@ -82,7 +82,7 @@ export function APPurchaseModal({ visible, onClose }: APPurchaseModalProps) {
               <View style={styles.cardContent}>
                 <View>
                   <Text style={styles.amount}>{CREDITS_AMOUNT} CREDITS</Text>
-                  <Text style={styles.rate}>1 Credit = 0.1 MON</Text>
+                  <Text style={styles.rate}>50 Credits = 1 MON</Text>
                 </View>
                 <View style={styles.priceTag}>
                   <Text style={styles.price}>{MON_AMOUNT} MON</Text>

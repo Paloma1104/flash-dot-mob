@@ -1,19 +1,28 @@
-import { GAME_CONFIGS, GameType, type GameDrop } from '../types/game';
+import { GAME_CONFIGS, GameType, type GameDrop } from "../types/game";
 
 // Generate mock game drops around a location
 // Radius of 0.01-0.03 (~1-3 kilometers) for proper spacing
-export function generateMockGameDrops(latitude: number, longitude: number): GameDrop[] {
+export function generateMockGameDrops(
+  latitude: number,
+  longitude: number,
+): GameDrop[] {
   const minRadius = 0.0005; // ~50 meters
   const maxRadius = 0.0045; // ~500 meters
   const gameTypes = Object.values(GameType);
-  const difficulties: ('easy' | 'medium' | 'hard')[] = ['easy', 'medium', 'hard'];
+  const difficulties: ("easy" | "medium" | "hard")[] = [
+    "easy",
+    "medium",
+    "hard",
+  ];
 
   const drops: GameDrop[] = [];
   const dropCount = 20; // Generate 20 game drops with good spacing
 
   for (let i = 0; i < dropCount; i++) {
-    const randomGameType = gameTypes[Math.floor(Math.random() * gameTypes.length)]!;
-    const randomDifficulty = difficulties[Math.floor(Math.random() * difficulties.length)]!;
+    const randomGameType =
+      gameTypes[Math.floor(Math.random() * gameTypes.length)]!;
+    const randomDifficulty =
+      difficulties[Math.floor(Math.random() * difficulties.length)]!;
 
     // Random position between minRadius and maxRadius (1-3km)
     const angle = Math.random() * 2 * Math.PI;
@@ -30,14 +39,14 @@ export function generateMockGameDrops(latitude: number, longitude: number): Game
     const apCost = difficultyConfig.apCost;
 
     drops.push({
-      id: `game-drop-${i}`,
+      id: `game-drop-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 5)}`,
       latitude: randomLat,
       longitude: randomLng,
       gameType: randomGameType,
       difficulty: randomDifficulty,
       rewardAmount,
       apCost, // Now properly set from game config
-      tokenSymbol: 'MON',
+      tokenSymbol: "MON",
       expiresAt: null,
       createdAt: new Date().toISOString(),
       completedBy: [],
@@ -54,11 +63,16 @@ export function getNearbyGameDrops(
   userLat: number,
   userLng: number,
   drops: GameDrop[],
-  maxDistance = 5000 // 5km default for better coverage
+  maxDistance = 5000, // 5km default for better coverage
 ): GameDrop[] {
   return drops
     .map((drop) => {
-      const distance = calculateDistance(userLat, userLng, drop.latitude, drop.longitude);
+      const distance = calculateDistance(
+        userLat,
+        userLng,
+        drop.latitude,
+        drop.longitude,
+      );
       return { drop, distance };
     })
     .filter(({ distance }) => distance <= maxDistance)
@@ -67,14 +81,21 @@ export function getNearbyGameDrops(
 }
 
 // Calculate distance between two coordinates in meters
-function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+function calculateDistance(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+): number {
   const R = 6371e3; // Earth radius in meters
   const φ1 = (lat1 * Math.PI) / 180;
   const φ2 = (lat2 * Math.PI) / 180;
   const Δφ = ((lat2 - lat1) * Math.PI) / 180;
   const Δλ = ((lon2 - lon1) * Math.PI) / 180;
 
-  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
 
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 

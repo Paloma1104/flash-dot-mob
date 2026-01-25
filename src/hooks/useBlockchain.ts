@@ -31,44 +31,47 @@ export function usePurchaseCredits() {
     txHash: null,
   });
 
-  const purchaseCredits = useCallback(async () => {
-    if (!address) {
-      setState({
-        isLoading: false,
-        error: "Wallet not connected",
-        txHash: null,
-      });
-      return null;
-    }
-
-    setState({ isLoading: true, error: null, txHash: null });
-
-    try {
-      console.log("💰 Purchasing credits...");
-      const amount = parseEther("5.0"); // 5 MON fixed price
-
-      const hash = await walletClient?.sendTransaction({
-        to: TREASURY_ADDRESS as `0x${string}`,
-        value: amount,
-        account: address as `0x${string}`,
-        chain: undefined, // Let wallet handle chain
-      });
-
-      if (hash) {
-        console.log("✅ MON sent, tx:", hash);
-        setState({ isLoading: false, error: null, txHash: hash });
-        return hash;
-      } else {
-        throw new Error("Transaction failed");
+  const purchaseCredits = useCallback(
+    async (amountStr?: string) => {
+      if (!address) {
+        setState({
+          isLoading: false,
+          error: "Wallet not connected",
+          txHash: null,
+        });
+        return null;
       }
-    } catch (error) {
-      const errorMsg =
-        error instanceof Error ? error.message : "Failed to purchase credits";
-      console.error("Purchase error:", error);
-      setState({ isLoading: false, error: errorMsg, txHash: null });
-      return null;
-    }
-  }, [address, walletClient]);
+
+      setState({ isLoading: true, error: null, txHash: null });
+
+      try {
+        console.log(`💰 Purchasing credits (Amount: ${amountStr || "1.0"})...`);
+        const amount = parseEther(amountStr || "1.0"); // Default 1.0 (50 credits) if not specified
+
+        const hash = await walletClient?.sendTransaction({
+          to: TREASURY_ADDRESS as `0x${string}`,
+          value: amount,
+          account: address as `0x${string}`,
+          chain: undefined, // Let wallet handle chain
+        });
+
+        if (hash) {
+          console.log("✅ MON sent, tx:", hash);
+          setState({ isLoading: false, error: null, txHash: hash });
+          return hash;
+        } else {
+          throw new Error("Transaction failed");
+        }
+      } catch (error) {
+        const errorMsg =
+          error instanceof Error ? error.message : "Failed to purchase credits";
+        console.error("Purchase error:", error);
+        setState({ isLoading: false, error: errorMsg, txHash: null });
+        return null;
+      }
+    },
+    [address, walletClient],
+  );
 
   return { ...state, purchaseCredits };
 }

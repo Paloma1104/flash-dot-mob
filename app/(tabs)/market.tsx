@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { usePurchaseCredits } from "@/hooks/useBlockchain";
 import { useGameCredits } from "@/hooks/useGameCredits";
 import { useWallet } from "@/hooks/useWallet";
 import { useUserStore } from "@/stores/userStore";
@@ -18,26 +19,30 @@ import { useUserStore } from "@/stores/userStore";
 export default function MarketScreen() {
   const { isConnected, connect, address } = useWallet();
   const { balance } = useUserStore();
-  const { buyCredits, isLoading } = useGameCredits();
+
+  // Use hooks with aliases to manage loading states
+  const { purchaseCredits, isLoading: isPurchasing } = usePurchaseCredits();
+  const { buyCredits, isLoading: isLoadingCredits } = useGameCredits();
+
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const CREDIT_PACKS = [
     {
       id: "small",
       credits: 50,
-      cost: 5,
+      cost: 1, // 1 MON = 50 Credits
       color: ["#4ECDC4", "#2E86DE"] as const,
     },
     {
       id: "medium",
       credits: 100,
-      cost: 9,
+      cost: 1.8,
       color: ["#6C5CE7", "#a29bfe"] as const,
     },
     {
       id: "large",
       credits: 500,
-      cost: 40,
+      cost: 8,
       color: ["#FF6B9D", "#FFD93D"] as const,
     },
   ];
@@ -67,17 +72,33 @@ export default function MarketScreen() {
     }
 
     try {
-      const { success, txHash } = await buyCredits(undefined, amount); // Virtual Purchase
-      if (success) {
-        setSuccessMsg(`Purchased ${amount} Credits!`);
-        setTimeout(() => setSuccessMsg(null), 3000);
-      } else {
-        Alert.alert("Purchase Failed", "Could not complete transaction.");
+      // Step 1: Real On-Chain Payment (User pays MON)
+      // "Make it possible on chain"
+      const txHash = await purchaseCredits(cost.toString());
+
+      if (txHash) {
+        // Step 2: Backend Verification & Credit Top-up
+        const { success } = await buyCredits(txHash);
+
+        if (success) {
+          setSuccessMsg(`Purchased ${amount} Credits!`);
+          setTimeout(() => setSuccessMsg(null), 3000);
+        } else {
+          // Money sent but verification failed - rare edge case
+          Alert.alert(
+            "Notice",
+            "Payment sent but credit update pending. Please check balance shortly.",
+          );
+        }
       }
+      // If purchaseCredits returns null, it handled the error/cancellation already
     } catch (error) {
       console.error("Purchase error:", error);
+      Alert.alert("Error", "Purchase failed.");
     }
   };
+
+  const isLoading = isPurchasing || isLoadingCredits;
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
