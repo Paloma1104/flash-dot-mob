@@ -21,6 +21,20 @@ backend/.env
 contracts/.env
 
 # ============================================
+# DEPLOYMENT DOCUMENTATION (OPTIONAL - UNCOMMENT TO IGNORE)
+# ============================================
+# 0_START_HERE.md
+# 1_PRE_DEPLOYMENT_CHECKLIST.md
+# 2_PRE_DEPLOYMENT_TEST_RESULTS.md
+# 3_DEPLOYMENT_SUMMARY.md
+# 4_DEPLOYMENT_GUIDE.md
+# 5_QUICK_DEPLOY.md
+# 6_DEPLOY_COMMANDS.md
+# 7_FINAL_CHECKLIST.md
+# DEPLOYMENT_SUMMARY.md
+# SUPABASE_SETUP.md
+
+# ============================================
 # EXPO
 # ============================================
 .expo/
