@@ -3,16 +3,24 @@
  * Supports MetaMask and WalletConnect on Monad Testnet
  */
 
-import { injected, walletConnect } from "wagmi/connectors";
-import { createConfig, http } from "wagmi";
 import { defineChain } from "viem";
+import { createConfig, http } from "wagmi";
+import { injected, walletConnect } from "wagmi/connectors";
 
 // Polyfill window for React Native if needed
-if (typeof window !== 'undefined' && !window.addEventListener) {
-  // @ts-ignore - Add minimal polyfill for wagmi
-  window.addEventListener = () => {};
-  // @ts-ignore
-  window.removeEventListener = () => {};
+if (typeof window !== 'undefined') {
+  if (!window.addEventListener) {
+    // @ts-ignore - Add minimal polyfill for wagmi
+    window.addEventListener = () => {};
+  }
+  if (!window.removeEventListener) {
+    // @ts-ignore
+    window.removeEventListener = () => {};
+  }
+  if (!window.dispatchEvent) {
+    // @ts-ignore
+    window.dispatchEvent = () => {};
+  }
 }
 
 // Define Monad Testnet chain

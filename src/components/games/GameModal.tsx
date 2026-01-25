@@ -158,8 +158,8 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
           gameDrop.gameType,
           gameDrop.difficulty,
           timeSpent,
-          gameDrop.location.latitude,
-          gameDrop.location.longitude
+          gameDrop.location?.latitude,
+          gameDrop.location?.longitude
         );
       if (success && completeTxHash) {
         setTxHash(completeTxHash);

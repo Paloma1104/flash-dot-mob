@@ -12,7 +12,7 @@ import {
     View,
 } from "react-native";
 
-const BACKEND_URL = "http://172.22.67.186:3001";
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "http://172.22.67.186:3001";
 
 interface LeaderboardEntry {
   wallet_address: string;
@@ -42,8 +42,22 @@ export function LeaderboardScreen() {
   useEffect(() => {
     if (mode === "nearby" && location) {
       fetchLeaderboard();
+      
+      // Auto-refresh every 15 seconds
+      const interval = setInterval(() => {
+        fetchLeaderboard(false);
+      }, 15000);
+      
+      return () => clearInterval(interval);
     } else if (mode === "global") {
       fetchLeaderboard();
+      
+      // Auto-refresh every 15 seconds
+      const interval = setInterval(() => {
+        fetchLeaderboard(false);
+      }, 15000);
+      
+      return () => clearInterval(interval);
     }
   }, [mode, location, radius]);
 
@@ -67,9 +81,9 @@ export function LeaderboardScreen() {
     }
   };
 
-  const fetchLeaderboard = async () => {
+  const fetchLeaderboard = async (showLoading = true) => {
     try {
-      setLoading(true);
+      if (showLoading) setLoading(true);
       let url = `${BACKEND_URL}/api/leaderboard/global`;
 
       if (mode === "nearby" && location) {
@@ -81,11 +95,12 @@ export function LeaderboardScreen() {
 
       if (data.success) {
         setLeaderboard(data.leaderboard);
+        console.log(`🏆 Leaderboard updated: ${data.leaderboard.length} players`);
       }
     } catch (error) {
       console.error("Error fetching leaderboard:", error);
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
       setRefreshing(false);
     }
   };

@@ -40,7 +40,7 @@ CREATE TABLE IF NOT EXISTS game_sessions (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Leaderboard view - Global
+-- Leaderboard view - Global (show all players who have played games)
 CREATE OR REPLACE VIEW leaderboard_global AS
 SELECT 
   p.wallet_address,
@@ -49,10 +49,10 @@ SELECT
   p.total_games_played,
   p.total_wins,
   p.last_active,
-  ROW_NUMBER() OVER (ORDER BY p.total_points DESC, p.total_wins DESC) as rank
+  ROW_NUMBER() OVER (ORDER BY p.total_points DESC, p.total_wins DESC, p.total_games_played DESC) as rank
 FROM players p
-WHERE p.total_points > 0
-ORDER BY p.total_points DESC, p.total_wins DESC
+WHERE p.total_games_played > 0
+ORDER BY p.total_points DESC, p.total_wins DESC, p.total_games_played DESC
 LIMIT 100;
 
 -- Function to get nearby leaderboard (within radius in meters)
@@ -82,17 +82,17 @@ BEGIN
       p.location::geography,
       ST_SetSRID(ST_MakePoint(user_lon, user_lat), 4326)::geography
     ) as distance_meters,
-    ROW_NUMBER() OVER (ORDER BY p.total_points DESC, p.total_wins DESC) as rank
+    ROW_NUMBER() OVER (ORDER BY p.total_points DESC, p.total_wins DESC, p.total_games_played DESC) as rank
   FROM players p
   WHERE 
-    p.total_points > 0
+    p.total_games_played > 0
     AND p.location IS NOT NULL
     AND ST_DWithin(
       p.location::geography,
       ST_SetSRID(ST_MakePoint(user_lon, user_lat), 4326)::geography,
       radius_meters
     )
-  ORDER BY p.total_points DESC, p.total_wins DESC
+  ORDER BY p.total_points DESC, p.total_wins DESC, p.total_games_played DESC
   LIMIT 50;
 END;
 $$ LANGUAGE plpgsql;

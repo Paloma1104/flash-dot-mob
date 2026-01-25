@@ -12,8 +12,8 @@ interface UserBalance {
   points: number;
 }
 
-// NOTE: Hardcoded to bypass Expo's env cache issue. Update IP if it changes.
-const BACKEND_URL = "http://172.22.67.186:3001";
+// NOTE: Use environment variable for backend URL
+const BACKEND_URL = process.env.EXPO_PUBLIC_BACKEND_URL || "http://172.22.67.186:3001";
 
 export function useGameCredits() {
   const { address } = useWallet();

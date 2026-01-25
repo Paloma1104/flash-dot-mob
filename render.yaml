@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: flashmob-backend
+    env: node
+    region: oregon
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BACKEND_PORT
+        value: 10000
+      - key: EXPO_PUBLIC_RPC_URL
+        value: https://testnet-rpc.monad.xyz
+      - key: EXPO_PUBLIC_CHAIN_ID
+        value: 10143
+      - key: EXPO_PUBLIC_GAME_REWARDS_ADDRESS
+        value: 0x22b9152E9878C1EFE498479718f8f2b62b1b586E
+      - key: EXPO_PUBLIC_FLASH_MOB_ADDRESS
+        value: 0x09F48a7E427AA0331A67fE2f8B6066d673172F12
+      - key: EXPO_PUBLIC_CREDITS_MARKETPLACE_ADDRESS
+        value: 0xc078f3b67A684fe0f1be2440551F3F7de6F2ae63
+      - key: EXPO_PUBLIC_SUPABASE_URL
+        value: https://xnnaenodkttxljdwntbb.supabase.co
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: BACKEND_PRIVATE_KEY
+        sync: false
