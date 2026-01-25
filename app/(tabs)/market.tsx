@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -14,35 +14,56 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { usePurchaseCredits } from "@/hooks/useBlockchain";
 import { useGameCredits } from "@/hooks/useGameCredits";
 import { useWallet } from "@/hooks/useWallet";
-import { useUserStore } from "@/stores/userStore";
 
 export default function MarketScreen() {
   const { isConnected, connect, address } = useWallet();
-  const { balance } = useUserStore();
 
   // Use hooks with aliases to manage loading states
   const { purchaseCredits, isLoading: isPurchasing } = usePurchaseCredits();
-  const { buyCredits, isLoading: isLoadingCredits } = useGameCredits();
+  const {
+    credits,
+    buyCredits,
+    fetchBalance,
+    isLoading: isLoadingCredits
+  } = useGameCredits();
 
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [hasClaimedWelcome, setHasClaimedWelcome] = useState(false);
+  const [isClaiming, setIsClaiming] = useState(false);
+  const [displayCredits, setDisplayCredits] = useState(0);
 
+  // Sync credits from hook to local display state
+  useEffect(() => {
+    setDisplayCredits(credits);
+    console.log(`🎮 Credits updated: ${credits}`);
+  }, [credits]);
+
+  // Track if welcome bonus was claimed (credits > 0 means claimed)
+  useEffect(() => {
+    if (credits > 0) {
+      setHasClaimedWelcome(true);
+    }
+  }, [credits]);
+
+  // Credit packs: Base rate is 10 credits per MON
+  // Minimum purchase: 5 MON = 50 Credits
   const CREDIT_PACKS = [
     {
       id: "small",
       credits: 50,
-      cost: 1, // 1 MON = 50 Credits
+      cost: 5, // 5 MON = 50 Credits (10 credits/MON)
       color: ["#4ECDC4", "#2E86DE"] as const,
     },
     {
       id: "medium",
       credits: 100,
-      cost: 1.8,
+      cost: 10, // 10 MON = 100 Credits
       color: ["#6C5CE7", "#a29bfe"] as const,
     },
     {
       id: "large",
-      credits: 500,
-      cost: 8,
+      credits: 250,
+      cost: 25, // 25 MON = 250 Credits
       color: ["#FF6B9D", "#FFD93D"] as const,
     },
   ];
@@ -107,7 +128,7 @@ export default function MarketScreen() {
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Marketplace</Text>
           <View style={styles.balanceTag}>
-            <Text style={styles.balanceText}>{balance.toFixed(0)} Credits</Text>
+            <Text style={styles.balanceText}>{displayCredits} Credits</Text>
           </View>
         </View>
 
@@ -116,6 +137,61 @@ export default function MarketScreen() {
             <Ionicons name="checkmark-circle" size={20} color="#6C5CE7" />
             <Text style={styles.successText}>{successMsg}</Text>
           </View>
+        )}
+
+        {/* Welcome Bonus - Show only if not connected or hasn't claimed yet */}
+        {(!isConnected || !hasClaimedWelcome) && (
+          <TouchableOpacity
+            style={[styles.welcomeBonus, isClaiming && styles.welcomeBonusDisabled]}
+            onPress={async () => {
+              if (!isConnected) {
+                await connect();
+              } else if (!hasClaimedWelcome) {
+                setIsClaiming(true);
+                try {
+                  // Trigger balance fetch which auto-airdrops 50 credits on backend
+                  await fetchBalance();
+                  setHasClaimedWelcome(true);
+                  setSuccessMsg("Welcome! You received 50 Credits!");
+                  setTimeout(() => setSuccessMsg(null), 3000);
+                } catch (error) {
+                  console.error("Claim error:", error);
+                  Alert.alert("Error", "Failed to claim welcome bonus. Please try again.");
+                } finally {
+                  setIsClaiming(false);
+                }
+              }
+            }}
+            disabled={isLoading || isClaiming}
+          >
+            <LinearGradient
+              colors={["#00D9FF", "#6C5CE7"]}
+              style={styles.welcomeGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={styles.welcomeContent}>
+                <Ionicons name={isClaiming ? "hourglass" : "gift"} size={32} color="#FFF" />
+                <View style={styles.welcomeTextContainer}>
+                  <Text style={styles.welcomeTitle}>
+                    {isClaiming
+                      ? "Claiming..."
+                      : isConnected
+                        ? "Claim Welcome Bonus!"
+                        : "Connect & Get 50 Credits!"}
+                  </Text>
+                  <Text style={styles.welcomeSubtitle}>
+                    {isClaiming
+                      ? "Please wait..."
+                      : isConnected
+                        ? "Tap to claim your free 50 credits"
+                        : "Connect your wallet to receive free credits"}
+                  </Text>
+                </View>
+                {!isClaiming && <Ionicons name="chevron-forward" size={24} color="#FFF" />}
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
         )}
 
         {/* Credit Packs */}
@@ -326,5 +402,39 @@ const styles = StyleSheet.create({
   successText: {
     color: "#6C5CE7",
     fontWeight: "600",
+  },
+  welcomeBonus: {
+    marginBottom: 20,
+    borderRadius: 16,
+    overflow: "hidden",
+    elevation: 5,
+    shadowColor: "#6C5CE7",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
+  welcomeGradient: {
+    padding: 16,
+  },
+  welcomeContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  welcomeTextContainer: {
+    flex: 1,
+  },
+  welcomeTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#FFF",
+    marginBottom: 2,
+  },
+  welcomeSubtitle: {
+    fontSize: 12,
+    color: "rgba(255, 255, 255, 0.8)",
+  },
+  welcomeBonusDisabled: {
+    opacity: 0.7,
   },
 });

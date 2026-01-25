@@ -15,13 +15,14 @@ interface TransactionState {
 
 // Treasury address to receive MON payments
 // In production, this should be a secure wallet or contract
+// Uses the deployer address from PRIVATE_KEY if TREASURY not set
 const TREASURY_ADDRESS =
   process.env.EXPO_PUBLIC_TREASURY_ADDRESS ||
-  "0x61dbad316e3f6503dfde8776427a2b9b51852d8944f2be986799b53a618f1e5d";
+  "0xDbb458BF29B7AdDf8AE78D496EC0aF23A0E9B448"; // Fallback to MockMON contract as treasury
 
 /**
  * Hook for purchasing game credits with MON
- * Rate: 5 MON = 50 Credits
+ * Rate: 10 credits per MON (e.g., 5 MON = 50 Credits)
  */
 export function usePurchaseCredits() {
   const { walletClient, sendTransaction, address } = useWallet();
@@ -45,8 +46,8 @@ export function usePurchaseCredits() {
       setState({ isLoading: true, error: null, txHash: null });
 
       try {
-        console.log(`💰 Purchasing credits (Amount: ${amountStr || "1.0"})...`);
-        const amount = parseEther(amountStr || "1.0"); // Default 1.0 (50 credits) if not specified
+        console.log(`💰 Purchasing credits (Amount: ${amountStr || "5.0"} MON)...`);
+        const amount = parseEther(amountStr || "5.0"); // Default 5.0 MON = 50 credits (10 credits per MON)
 
         const hash = await walletClient?.sendTransaction({
           to: TREASURY_ADDRESS as `0x${string}`,

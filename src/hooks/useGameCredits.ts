@@ -28,17 +28,36 @@ export function useGameCredits() {
   });
 
   const fetchBalance = useCallback(async () => {
-    if (!address) return;
+    if (!address) {
+      console.log("⚠️ fetchBalance: No address available");
+      return;
+    }
+
+    console.log(`🔄 Fetching balance for ${address}...`);
+    console.log(`📡 Backend URL: ${BACKEND_URL}`);
+
     try {
       const response = await fetch(
         `${BACKEND_URL}/api/user/balance/${address}`,
       );
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
       const data = await response.json();
+      console.log(`✅ Balance response:`, data);
+
       if (data.success) {
         setBalance({ credits: data.credits, points: data.points });
+        console.log(`💰 Credits: ${data.credits}, Points: ${data.points}`);
+      } else {
+        throw new Error(data.error || "Failed to fetch balance");
       }
     } catch (error) {
-      console.error("Failed to fetch balance:", error);
+      console.error("❌ Failed to fetch balance:", error);
+      // Re-throw so caller can handle it
+      throw error;
     }
   }, [address]);
 
