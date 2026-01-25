@@ -158,7 +158,7 @@ export default function WalletScreen() {
               style={styles.buyAPButton}
               onPress={() => setActiveModal("buyAP")}
             >
-              <Text style={styles.buyAPButtonText}>+ Buy AP</Text>
+              <Text style={styles.buyAPButtonText}>🎁 Claim Free</Text>
             </TouchableOpacity>
           </View>
 

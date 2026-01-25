@@ -3,15 +3,14 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import {
-  ActivityIndicator,
-  Modal,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Modal,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
-import { usePurchaseCredits } from "@/hooks/useBlockchain";
 import { useGameCredits } from "@/hooks/useGameCredits";
 
 interface APPurchaseModalProps {
@@ -21,38 +20,31 @@ interface APPurchaseModalProps {
 
 export function APPurchaseModal({ visible, onClose }: APPurchaseModalProps) {
   const {
-    purchaseCredits,
-    isLoading: isSending,
-    error: sendError,
-  } = usePurchaseCredits();
-  const {
-    buyCredits,
-    isLoading: isVerifying,
-    error: verifyError,
+    claimCredits,
+    isLoading,
+    error,
   } = useGameCredits();
 
-  // Single fixed package: 1 MON = 50 Credits
-  const MON_AMOUNT = "1.0";
+  const [hasClaimed, setHasClaimed] = React.useState(false);
+
+  // Single fixed package: 50 Credits (One-time FREE claim)
   const CREDITS_AMOUNT = 50;
 
-  const handlePurchase = async () => {
+  const handleClaim = async () => {
     try {
-      // Step 1: Send MON
-      // purchaseCredits hook handles the wallet tx for 1 MON
-      const txHash = await purchaseCredits();
+      // Free Claim: Backend handles everything
+      const result = await claimCredits();
 
-      if (txHash) {
-        // Step 2: Verify on backend
-        await buyCredits(txHash);
-        onClose();
+      if (result.success) {
+        setHasClaimed(true);
+        setTimeout(() => {
+          onClose();
+        }, 1500);
       }
     } catch (error) {
-      console.error("Purchase flow failed", error);
+      console.error("Claim flow failed", error);
     }
   };
-
-  const isLoading = isSending || isVerifying;
-  const error = sendError || verifyError;
 
   return (
     <Modal visible={visible} transparent animationType="slide">
@@ -64,17 +56,17 @@ export function APPurchaseModal({ visible, onClose }: APPurchaseModalProps) {
 
           <View style={styles.header}>
             <View style={styles.iconContainer}>
-              <Ionicons name="wallet-outline" size={32} color="#FFF" />
+              <Ionicons name="gift-outline" size={32} color="#FFF" />
             </View>
-            <Text style={styles.title}>Top Up Credits</Text>
+            <Text style={styles.title}>Claim Free Credits</Text>
             <Text style={styles.subtitle}>
-              Purchase credits to play games and earn points.
+              Get 50 free credits to start playing games! One-time offer per wallet.
             </Text>
           </View>
 
           <View style={styles.card}>
             <LinearGradient
-              colors={["#4ECDC4", "#2E86DE"]}
+              colors={["#06FFA5", "#2E86DE"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
               style={styles.cardGradient}
@@ -82,10 +74,10 @@ export function APPurchaseModal({ visible, onClose }: APPurchaseModalProps) {
               <View style={styles.cardContent}>
                 <View>
                   <Text style={styles.amount}>{CREDITS_AMOUNT} CREDITS</Text>
-                  <Text style={styles.rate}>50 Credits = 1 MON</Text>
+                  <Text style={styles.rate}>One-time FREE claim</Text>
                 </View>
                 <View style={styles.priceTag}>
-                  <Text style={styles.price}>{MON_AMOUNT} MON</Text>
+                  <Text style={styles.price}>🎁 FREE</Text>
                 </View>
               </View>
             </LinearGradient>
@@ -99,12 +91,12 @@ export function APPurchaseModal({ visible, onClose }: APPurchaseModalProps) {
           )}
 
           <TouchableOpacity
-            style={[styles.buyButton, isLoading && styles.disabledButton]}
-            onPress={handlePurchase}
-            disabled={isLoading}
+            style={[styles.buyButton, (isLoading || hasClaimed) && styles.disabledButton]}
+            onPress={handleClaim}
+            disabled={isLoading || hasClaimed}
           >
             <LinearGradient
-              colors={["#6C5CE7", "#a29bfe"]}
+              colors={hasClaimed ? ["#06FFA5", "#06FFA5"] : ["#6C5CE7", "#a29bfe"]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.buttonGradient}
@@ -112,13 +104,15 @@ export function APPurchaseModal({ visible, onClose }: APPurchaseModalProps) {
               {isLoading ? (
                 <View style={styles.loadingRow}>
                   <ActivityIndicator color="#FFF" size="small" />
-                  <Text style={styles.buttonText}>
-                    {isSending ? "Sending MON..." : "Verifying..."}
-                  </Text>
+                  <Text style={styles.buttonText}>Claiming...</Text>
+                </View>
+              ) : hasClaimed ? (
+                <View style={styles.loadingRow}>
+                  <Text style={styles.buttonText}>✅ Claimed!</Text>
                 </View>
               ) : (
                 <Text style={styles.buttonText}>
-                  Purchase for {MON_AMOUNT} MON
+                  🎁 Claim {CREDITS_AMOUNT} Free Credits
                 </Text>
               )}
             </LinearGradient>

@@ -62,6 +62,37 @@ export function useGameCredits() {
   }, [address]);
 
   /**
+   * Claim FREE credits (one-time per wallet)
+   */
+  const claimCredits = useCallback(async () => {
+    if (!address) return { success: false, txHash: null };
+    setState({ isLoading: true, error: null, success: false });
+
+    try {
+      const response = await fetch(`${BACKEND_URL}/api/credits/claim`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || data.message || "Failed to claim credits");
+      }
+
+      setBalance((prev) => ({ ...prev, credits: data.newBalance }));
+      setState({ isLoading: false, error: null, success: true });
+      return { success: true, txHash: null };
+    } catch (error) {
+      const msg =
+        error instanceof Error ? error.message : "Claim credits failed";
+      setState({ isLoading: false, error: msg, success: false });
+      return { success: false, txHash: null };
+    }
+  }, [address]);
+
+  /**
    * Buy Credits
    * If txHash is provided, verifies real MON purchase.
    * If no txHash, triggers "Virtual Purchase" (backend signer TX).
@@ -159,6 +190,7 @@ export function useGameCredits() {
     isLoading: state.isLoading,
     error: state.error,
     fetchBalance,
+    claimCredits,
     buyCredits,
     startGame,
     completeGame,

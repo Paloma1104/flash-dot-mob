@@ -70,6 +70,7 @@ const getFlashMobDomain = () => ({
 interface UserData {
   credits: number; // Purchased with MON
   points: number; // Won from games
+  hasClaimedFreeCredits: boolean; // Track if user claimed free 50 credits
 }
 
 // In production, use Redis or Postgres
@@ -78,7 +79,7 @@ const users = new Map<string, UserData>();
 const getUser = (address: string): UserData => {
   const key = address.toLowerCase();
   if (!users.has(key)) {
-    users.set(key, { credits: 0, points: 0 });
+    users.set(key, { credits: 0, points: 0, hasClaimedFreeCredits: false });
   }
   return users.get(key)!;
 };
@@ -138,6 +139,49 @@ function verifyLocation(
 }
 
 /**
+ * POST /api/credits/claim
+ * One-time free credit claim (50 credits per wallet)
+ */
+app.post("/api/credits/claim", async (req: Request, res: Response) => {
+  try {
+    const { address } = req.body;
+
+    if (!address) {
+      return res.status(400).json({ error: "Missing address" });
+    }
+
+    const user = getUser(address);
+
+    // Check if already claimed
+    if (user.hasClaimedFreeCredits) {
+      return res.status(400).json({ 
+        error: "Already claimed",
+        message: "You have already claimed your free credits" 
+      });
+    }
+
+    console.log(`🎁 Processing FREE credit claim for ${address}`);
+
+    // Add 50 free credits
+    const creditsToAdd = 50;
+    updateUser(address, { 
+      credits: user.credits + creditsToAdd,
+      hasClaimedFreeCredits: true 
+    });
+
+    console.log(`✅ Claimed ${creditsToAdd} free credits for ${address}`);
+
+    res.json({
+      success: true,
+      creditsAdded: creditsToAdd,
+      newBalance: user.credits + creditsToAdd,
+    });
+  } catch (error) {
+    console.error("❌ Claim credits error:", error);
+    res.status(500).json({ error: "Failed to claim credits" });
+  }
+});
+
 /**
  * POST /api/credits/buy
  * Verify purchase transaction OR perform Virtual Purchase (Simulated)
@@ -165,24 +209,8 @@ app.post("/api/credits/buy", async (req: Request, res: Response) => {
       const user = getUser(address);
       updateUser(address, { credits: user.credits + creditsToAdd });
 
-      // 2. Broadcast Virtual TX (On-Chain)
-      let txHash = null;
-      try {
-        console.log(`📤 Broadcasting Virtual Purchase TX to ${address}...`);
-        const tx = await signer.sendTransaction({
-          to: address,
-          value: 0,
-          data: ethers.hexlify(
-            ethers.toUtf8Bytes(`Credits Purchased: ${creditsToAdd}`),
-          ),
-        });
-        console.log(`✅ Virtual Purchase TX confirmed: ${tx.hash}`);
-        txHash = tx.hash;
-      } catch (e) {
-        console.warn("⚠️ Virtual Purchase TX skipped:", e);
-        txHash =
-          "0x" + Math.random().toString(16).substr(2, 64).padEnd(64, "0");
-      }
+      // 2. No blockchain TX needed for instant purchase
+      const txHash = "0x" + Math.random().toString(16).substr(2, 64).padEnd(64, "0");
 
       return res.json({
         success: true,
@@ -809,17 +837,13 @@ app.get("/api/user/balance/:address", (req: Request, res: Response) => {
     return res.status(400).json({ error: "Missing address" });
   }
 
-  const key = address.toLowerCase();
-
-  // Initial Airdrop Logic
-  // If user doesn't exist, create them with 50 credits (Simulation of entry token)
-  if (!users.has(key)) {
-    console.log(`🎁 New user detected! Airdropping 50 credits to ${key}`);
-    users.set(key, { credits: 50, points: 0 });
-  }
-
-  const user = users.get(key)!;
-  res.json({ success: true, credits: user.credits, points: user.points });
+  const user = getUser(address);
+  res.json({ 
+    success: true, 
+    credits: user.credits, 
+    points: user.points,
+    hasClaimedFreeCredits: user.hasClaimedFreeCredits 
+  });
 });
 
 /**
@@ -915,8 +939,9 @@ server.listen(PORT, "0.0.0.0", () => {
   console.log(`   POST /api/station/leave - Leave station`);
   console.log(`   POST /api/station/complete - Submit score`);
   console.log(
-    `   GET  /api/user/balance/:address - Get balance (Auto-airdrop)`,
+    `   GET  /api/user/balance/:address - Get balance & claim status`,
   );
+  console.log(`   POST /api/credits/claim - Claim FREE 50 credits (one-time)`);
   console.log(`   POST /api/credits/buy - Buy credits`);
   console.log(`   POST /api/game/start - Start game (deduct credits)`);
   console.log(`   POST /api/game/complete - Complete game (earn points)`);

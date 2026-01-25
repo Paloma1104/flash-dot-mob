@@ -103,22 +103,20 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
         ) {
           Alert.alert(
             "Insufficient Credits",
-            "You need 5 Credits to play. Buy 50 Credits now?",
+            "You need 5 Credits to play. Claim 50 FREE Credits now?",
             [
               { text: "Cancel", style: "cancel" },
               {
-                text: "Buy 50 Credits",
+                text: "Claim 50 Credits",
                 onPress: async () => {
-                  // Virtual Purchase (Backend Signer)
-                  const { success: buySuccess, txHash: buyTxHash } =
-                    await buyCredits();
-                  if (buySuccess) {
+                  // Free Claim (Backend only - no wallet transaction)
+                  const { success: claimSuccess } = await buyCredits(undefined, 50);
+                  if (claimSuccess) {
                     Alert.alert("Success!", "50 Credits added to your account.", [
                       { text: "Play Now", onPress: () => handleStartGame() },
                     ]);
-                    setTxHash(buyTxHash);
                   } else {
-                    Alert.alert("Error", "Credit purchase failed.");
+                    Alert.alert("Error", startError || "Credit claim failed. You may have already claimed your free credits.");
                   }
                 },
               },
