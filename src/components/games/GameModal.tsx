@@ -46,9 +46,11 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
   const { startGame, completeGame, cancelGame } = useGameStore();
   const { isConnected, address } = useWallet();
   const {
+    credits,
     buyCredits,
     startGame: startGameOffChain,
     completeGame: completeGameOffChain,
+    fetchBalance,
     isLoading: isStarting,
     error: startError,
   } = useGameCredits();
@@ -83,12 +85,17 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
     }
 
     try {
+      console.log(`🎮 Starting game with ${credits} credits available`);
+      
       // Call backend to deduct credits
       const { success, txHash: startTxHash } = await startGameOffChain(
         gameDrop.gameType,
       );
 
       if (success) {
+        // Fetch updated balance
+        await fetchBalance();
+        
         // Update local state
         const localSuccess = await startGame(gameDrop);
         if (localSuccess) {
@@ -112,6 +119,8 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
                   // Free Claim (Backend only - no wallet transaction)
                   const { success: claimSuccess } = await buyCredits(undefined, 50);
                   if (claimSuccess) {
+                    // Fetch updated balance
+                    await fetchBalance();
                     Alert.alert("Success!", "50 Credits added to your account.", [
                       { text: "Play Now", onPress: () => handleStartGame() },
                     ]);
@@ -353,6 +362,13 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
                     ]}
                   >
                     {gameDrop.difficulty.toUpperCase()}
+                  </Text>
+                </View>
+
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>💳 Your Credits:</Text>
+                  <Text style={[styles.infoValue, { color: credits >= 5 ? "#06FFA5" : "#FF6B9D" }]}>
+                    {credits} Credits
                   </Text>
                 </View>
 

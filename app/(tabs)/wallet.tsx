@@ -1,10 +1,11 @@
 import { APPurchaseModal } from "@/components/ui/APPurchaseModal";
 import { OnboardingFlow } from "@/components/ui/OnboardingFlow";
+import { useGameCredits } from "@/hooks/useGameCredits";
 import { useWallet } from "@/hooks/useWallet";
 import { useUserStore } from "@/stores/userStore";
 import { LinearGradient } from "expo-linear-gradient";
 import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
     Modal,
     Pressable,
@@ -22,16 +23,29 @@ export default function WalletScreen() {
     useWallet();
   const {
     balance,
-    apBalance,
     history,
     stats,
     hasCompletedOnboarding,
     setOnboardingComplete,
   } = useUserStore();
+  
+  // Use credits from useGameCredits hook
+  const { credits, points, fetchBalance } = useGameCredits();
+  
   const [activeModal, setActiveModal] = useState<
     "receive" | "send" | "swap" | "buyAP" | null
   >(null);
   const [showOnboarding, setShowOnboarding] = useState(!hasCompletedOnboarding);
+
+  // Fetch balance when wallet connects
+  useEffect(() => {
+    if (isConnected && address) {
+      console.log("💳 Wallet connected, fetching balance...");
+      fetchBalance().catch(err => {
+        console.error("Failed to fetch balance:", err);
+      });
+    }
+  }, [isConnected, address]);
 
   const handleOnboardingComplete = () => {
     setOnboardingComplete();
@@ -153,7 +167,7 @@ export default function WalletScreen() {
           style={styles.apCard}
         >
           <View style={styles.cardHeader}>
-            <Text style={styles.cardLabel}>ACTIVITY POINTS</Text>
+            <Text style={styles.cardLabel}>GAME CREDITS</Text>
             <TouchableOpacity
               style={styles.buyAPButton}
               onPress={() => setActiveModal("buyAP")}
@@ -163,13 +177,13 @@ export default function WalletScreen() {
           </View>
 
           <View style={styles.balanceContainer}>
-            <Text style={styles.balance}>{apBalance.toFixed(0)}</Text>
-            <Text style={styles.symbol}>AP</Text>
+            <Text style={styles.balance}>{credits.toFixed(0)}</Text>
+            <Text style={styles.symbol}>CREDITS</Text>
           </View>
 
           <View style={styles.apInfo}>
             <Text style={styles.apInfoText}>
-              🎮 Use AP to play games • 100 MON = 1000 AP
+              🎮 Use Credits to play games • Earn Points from wins
             </Text>
           </View>
         </LinearGradient>

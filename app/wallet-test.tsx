@@ -1,13 +1,14 @@
-import { usePurchaseCredits } from "@/hooks/useBlockchain";
+import { useGameCredits } from "@/hooks/useGameCredits";
 import { useWallet } from "@/hooks/useWallet";
 import { useUserStore } from "@/stores/userStore";
 import {
-  ActivityIndicator,
-  Button,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Alert,
+    Button,
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 
 export default function WalletTestScreen() {
@@ -16,14 +17,23 @@ export default function WalletTestScreen() {
   const { apBalance, balance } = useUserStore();
 
   const {
-    purchaseCredits,
-    isLoading: purchasing,
-    txHash: purchaseTx,
-  } = usePurchaseCredits();
+    credits,
+    claimCredits,
+    isLoading: claiming,
+  } = useGameCredits();
 
-  const handlePurchase = async () => {
-    // Buy 50 credits for 5 MON
-    await purchaseCredits();
+  const handleClaim = async () => {
+    // Claim free 50 credits (one-time per wallet)
+    try {
+      const result = await claimCredits();
+      if (result.success) {
+        Alert.alert("Success", `Claimed ${result.credits} credits!`);
+      } else {
+        Alert.alert("Info", result.message || "Already claimed");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Failed to claim credits");
+    }
   };
 
   return (
@@ -52,18 +62,16 @@ export default function WalletTestScreen() {
 
       {isConnected && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>💰 Purchase Credits</Text>
+          <Text style={styles.sectionTitle}>🎁 Claim Free Credits</Text>
           <View style={styles.card}>
-            <Text style={styles.description}>Buy 50 Credits for 5 MON</Text>
-            {purchasing ? (
+            <Text style={styles.balance}>Current Credits: {credits}</Text>
+            <Text style={styles.description}>
+              Claim your free 50 credits (one-time per wallet)
+            </Text>
+            {claiming ? (
               <ActivityIndicator size="large" color="#0066cc" />
             ) : (
-              <Button title="Buy Credits" onPress={handlePurchase} />
-            )}
-            {purchaseTx && (
-              <Text style={styles.txHash}>
-                Tx: {purchaseTx.slice(0, 20)}...
-              </Text>
+              <Button title="Claim 50 Credits" onPress={handleClaim} />
             )}
           </View>
         </View>

@@ -2,16 +2,15 @@ import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useState } from "react";
 import {
-  Alert,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { usePurchaseCredits } from "@/hooks/useBlockchain";
 import { useGameCredits } from "@/hooks/useGameCredits";
 import { useWallet } from "@/hooks/useWallet";
 import React from "react";
@@ -19,11 +18,10 @@ import React from "react";
 export default function MarketScreen() {
   const { isConnected, connect, address } = useWallet();
 
-  // Use hooks with aliases to manage loading states
-  const { purchaseCredits, isLoading: isPurchasing } = usePurchaseCredits();
+  // Use backend-only credit system
   const {
     credits,
-    buyCredits,
+    claimCredits,
     fetchBalance,
     isLoading: isLoadingCredits
   } = useGameCredits();
@@ -89,45 +87,18 @@ export default function MarketScreen() {
 
   const handleBuyCredits = async (amount: number, cost: number) => {
     if (!isConnected) {
-      Alert.alert("Connect Wallet", "Please connect your wallet to purchase.");
+      Alert.alert("Connect Wallet", "Please connect your wallet first.");
       return;
     }
 
-    console.log(`🛒 Starting purchase: ${amount} credits for ${cost} MON`);
-
-    try {
-      // Step 1: Real On-Chain Payment (User pays MON)
-      const txHash = await purchaseCredits(cost.toString());
-
-      if (txHash) {
-        console.log(`✅ TX Hash received: ${txHash}`);
-
-        // Step 2: Backend Verification & Credit Top-up
-        const { success } = await buyCredits(txHash);
-
-        if (success) {
-          console.log(`✅ Credits purchased successfully!`);
-          // Refresh balance to show new credits
-          await fetchBalance();
-          setSuccessMsg(`Purchased ${amount} Credits!`);
-          setTimeout(() => setSuccessMsg(null), 3000);
-        } else {
-          // Money sent but verification failed - rare edge case
-          Alert.alert(
-            "Notice",
-            "Payment sent but credit update pending. Please check balance shortly.",
-          );
-        }
-      } else {
-        console.log("❌ Purchase cancelled or failed");
-      }
-    } catch (error) {
-      console.error("Purchase error:", error);
-      Alert.alert("Error", "Purchase failed. Please try again.");
-    }
+    Alert.alert(
+      "Coming Soon",
+      "On-chain credit purchases will be available soon! For now, claim your free 50 credits.",
+      [{ text: "OK" }]
+    );
   };
 
-  const isLoading = isPurchasing || isLoadingCredits;
+  const isLoading = isLoadingCredits;
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>

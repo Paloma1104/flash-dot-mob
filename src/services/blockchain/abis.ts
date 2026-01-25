@@ -538,6 +538,120 @@ export const MULTIPLAYER_STATION_ABI = [
 ] as const;
 
 // ============================================
+// CreditsMarketplace - Buy/Sell Credits with MON
+// ============================================
+export const CREDITS_MARKETPLACE_ABI = [
+  {
+    type: 'constructor',
+    inputs: [
+      { name: '_monToken', type: 'address' },
+      { name: '_treasury', type: 'address' },
+      { name: '_monPerCredit', type: 'uint256' },
+      { name: '_sellBackRate', type: 'uint256' },
+    ],
+    stateMutability: 'nonpayable',
+  },
+  // Main Functions
+  {
+    type: 'function',
+    name: 'buyCredits',
+    inputs: [{ name: 'creditsAmount', type: 'uint256' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  {
+    type: 'function',
+    name: 'sellCredits',
+    inputs: [{ name: 'creditsAmount', type: 'uint256' }],
+    outputs: [],
+    stateMutability: 'nonpayable',
+  },
+  // View Functions
+  {
+    type: 'function',
+    name: 'getCredits',
+    inputs: [{ name: 'user', type: 'address' }],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'calculateBuyCost',
+    inputs: [{ name: 'creditsAmount', type: 'uint256' }],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'calculateSellReturn',
+    inputs: [{ name: 'creditsAmount', type: 'uint256' }],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'monPerCredit',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'sellBackRate',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'minPurchase',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'maxPurchase',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'totalCredits',
+    inputs: [],
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+  },
+  {
+    type: 'function',
+    name: 'paused',
+    inputs: [],
+    outputs: [{ name: '', type: 'bool' }],
+    stateMutability: 'view',
+  },
+  // Events
+  {
+    type: 'event',
+    name: 'CreditsPurchased',
+    inputs: [
+      { name: 'buyer', type: 'address', indexed: true },
+      { name: 'creditsAmount', type: 'uint256', indexed: false },
+      { name: 'monPaid', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    type: 'event',
+    name: 'CreditsSold',
+    inputs: [
+      { name: 'seller', type: 'address', indexed: true },
+      { name: 'creditsAmount', type: 'uint256', indexed: false },
+      { name: 'monReceived', type: 'uint256', indexed: false },
+    ],
+  },
+] as const;
+
+// ============================================
 // Legacy ABI (for backwards compatibility)
 // ============================================
 export const DROP_CLAIMER_ABI = FLASH_MOB_V2_ABI;

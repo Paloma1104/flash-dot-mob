@@ -13,7 +13,7 @@ interface UserBalance {
 }
 
 // NOTE: Hardcoded to bypass Expo's env cache issue. Update IP if it changes.
-const BACKEND_URL = "http://172.22.65.49:3001";
+const BACKEND_URL = "http://172.22.67.186:3001";
 
 export function useGameCredits() {
   const { address } = useWallet();
@@ -65,30 +65,65 @@ export function useGameCredits() {
    * Claim FREE credits (one-time per wallet)
    */
   const claimCredits = useCallback(async () => {
-    if (!address) return { success: false, txHash: null };
+    if (!address) {
+      console.log("❌ No wallet address");
+      return { success: false, message: "Wallet not connected", credits: 0 };
+    }
+
+    console.log(`🎁 Claiming credits for ${address}...`);
+    console.log(`📡 Using backend URL: ${BACKEND_URL}`);
     setState({ isLoading: true, error: null, success: false });
 
     try {
+      // Add timeout to prevent hanging
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+
+      console.log(`📤 Sending POST to ${BACKEND_URL}/api/credits/claim`);
       const response = await fetch(`${BACKEND_URL}/api/credits/claim`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ address }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+      console.log(`📥 Response status: ${response.status}`);
+
       const data = await response.json();
+      console.log("📦 Claim response:", data);
 
       if (!response.ok) {
-        throw new Error(data.error || data.message || "Failed to claim credits");
+        const errorMsg = data.message || data.error || "Failed to claim credits";
+        console.log(`❌ Claim failed: ${errorMsg}`);
+        setState({ isLoading: false, error: errorMsg, success: false });
+        return { success: false, message: errorMsg, credits: 0 };
       }
 
+      // Update balance
       setBalance((prev) => ({ ...prev, credits: data.newBalance }));
       setState({ isLoading: false, error: null, success: true });
-      return { success: true, txHash: null };
+      
+      console.log(`✅ Claimed ${data.creditsAdded} credits! New balance: ${data.newBalance}`);
+      
+      return { 
+        success: true, 
+        message: `Claimed ${data.creditsAdded} credits!`,
+        credits: data.creditsAdded 
+      };
     } catch (error) {
-      const msg =
-        error instanceof Error ? error.message : "Claim credits failed";
+      let msg = "Claim credits failed";
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          msg = "Request timeout - backend not responding";
+        } else {
+          msg = error.message;
+        }
+      }
+      console.error("❌ Claim error:", error);
+      console.error("❌ Error details:", JSON.stringify(error, null, 2));
       setState({ isLoading: false, error: msg, success: false });
-      return { success: false, txHash: null };
+      return { success: false, message: msg, credits: 0 };
     }
   }, [address]);
 
