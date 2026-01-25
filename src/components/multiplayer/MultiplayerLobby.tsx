@@ -1,14 +1,14 @@
 import { LinearGradient } from "expo-linear-gradient";
 import React, { useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Animated,
-  Dimensions,
-  Modal,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Animated,
+    Dimensions,
+    Modal,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 import { useMultiplayerStore } from "@/stores/multiplayerStore";
@@ -150,9 +150,9 @@ export function MultiplayerLobby({
           {/* Stake Info */}
           <View style={styles.stakeContainer}>
             <Text style={styles.stakeLabel}>Entry Stake</Text>
-            <Text style={styles.stakeAmount}>🪙 {station.stakeAmount} AP</Text>
+            <Text style={styles.stakeAmount}>🪙 {station.stakeAmount} Credits</Text>
             <Text style={styles.poolInfo}>
-              Prize Pool: 🪙 {currentPlayers.length * station.stakeAmount} AP
+              Prize Pool: 🪙 {currentPlayers.length * station.stakeAmount} Credits
             </Text>
           </View>
 
@@ -262,8 +262,8 @@ export function MultiplayerLobby({
                 ) : (
                   <Text style={styles.actionButtonText}>
                     {apBalance < station.stakeAmount
-                      ? `Need ${station.stakeAmount} AP`
-                      : `Join Arena (${station.stakeAmount} AP)`}
+                      ? `Need ${station.stakeAmount} Credits`
+                      : `Join Arena (${station.stakeAmount} Credits)`}
                   </Text>
                 )}
               </TouchableOpacity>
@@ -272,7 +272,7 @@ export function MultiplayerLobby({
 
           {/* Your Balance */}
           <Text style={styles.balanceInfo}>
-            Your Balance: 🪙 {apBalance} AP
+            Your Balance: 🪙 {apBalance} Credits
           </Text>
         </LinearGradient>
       </View>

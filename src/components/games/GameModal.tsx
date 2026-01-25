@@ -2,13 +2,13 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import React from "react";
 import {
-  Alert,
-  Modal,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
+    Alert,
+    Modal,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
 import { useGameCredits } from "@/hooks/useGameCredits";
@@ -17,16 +17,16 @@ import { useGameStore } from "@/stores/gameStore";
 import type { GameDrop } from "@/types/game";
 import { GAME_CONFIGS, GameType } from "@/types/game";
 import {
-  ColorSequenceGame,
-  MathChallengeGame,
-  MemoryMatchGame,
-  PatternLockGame,
-  Puzzle2048Game,
-  SimonSaysGame,
-  SpotDifferenceGame,
-  SudokuGame,
-  TicTacToeGame,
-  WordScrambleGame,
+    ColorSequenceGame,
+    MathChallengeGame,
+    MemoryMatchGame,
+    PatternLockGame,
+    Puzzle2048Game,
+    SimonSaysGame,
+    SpotDifferenceGame,
+    SudokuGame,
+    TicTacToeGame,
+    WordScrambleGame,
 } from "./index";
 
 interface GameModalProps {
@@ -54,6 +54,16 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
   } = useGameCredits();
 
   const [txHash, setTxHash] = React.useState<string | null>(null);
+
+  // Reset state when modal closes or gameDrop changes
+  React.useEffect(() => {
+    if (!visible) {
+      setGameStarted(false);
+      setShowResults(false);
+      setGameResults(null);
+      setTxHash(null);
+    }
+  }, [visible]);
 
   // Legacy variables set to null/false for compatibility if needed
   const isClaiming = false;
@@ -93,22 +103,22 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
         ) {
           Alert.alert(
             "Insufficient Credits",
-            "You need 5 credits to play. Buy 50 now?",
+            "You need 5 Credits to play. Buy 50 Credits now?",
             [
               { text: "Cancel", style: "cancel" },
               {
-                text: "Buy Now (50 Credits)",
+                text: "Buy 50 Credits",
                 onPress: async () => {
                   // Virtual Purchase (Backend Signer)
                   const { success: buySuccess, txHash: buyTxHash } =
                     await buyCredits();
                   if (buySuccess) {
-                    Alert.alert("Success!", "Credits added.", [
+                    Alert.alert("Success!", "50 Credits added to your account.", [
                       { text: "Play Now", onPress: () => handleStartGame() },
                     ]);
                     setTxHash(buyTxHash);
                   } else {
-                    Alert.alert("Error", "Purchase failed.");
+                    Alert.alert("Error", "Credit purchase failed.");
                   }
                 },
               },
@@ -150,6 +160,15 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
     cancelGame();
     setGameStarted(false);
     setShowResults(false);
+    setGameResults(null);
+    setTxHash(null);
+    onClose();
+  };
+
+  const handleCloseResults = () => {
+    setGameStarted(false);
+    setShowResults(false);
+    setGameResults(null);
     setTxHash(null);
     onClose();
   };
@@ -273,7 +292,7 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
                 </View>
               )}
 
-              <TouchableOpacity style={styles.claimButton} onPress={onClose}>
+              <TouchableOpacity style={styles.claimButton} onPress={handleCloseResults}>
                 <View
                   style={[
                     styles.claimGradient,
@@ -341,14 +360,16 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
 
                 <View style={styles.infoRow}>
                   <Text style={styles.infoLabel}>🎟️ Cost to Play:</Text>
-                  <Text style={[styles.infoValue, { color: "#4ECDC4" }]}>
-                    5 CREDITS
+                  <Text style={[styles.infoValue, { color: "#FF6B9D" }]}>
+                    5 Credits
                   </Text>
                 </View>
 
                 <View style={styles.infoRow}>
                   <Text style={styles.infoLabel}>💰 Reward:</Text>
-                  <Text style={styles.infoValue}>POINTS</Text>
+                  <Text style={[styles.infoValue, { color: "#06FFA5" }]}>
+                    Points (Score ÷ 10)
+                  </Text>
                 </View>
               </View>
 
@@ -362,9 +383,8 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
               <View style={styles.rulesSection}>
                 <Text style={styles.rulesTitle}>How to Play:</Text>
                 <Text style={styles.rulesText}>
-                  • Complete the challenge to earn Points{"\n"}• Higher
-                  difficulty = More rewards{"\n"}• Faster completion = Bonus
-                  points{"\n"}• You can only play each game once!
+                  • Costs 5 Credits to start{"\n"}• Earn Points based on your score{"\n"}• 
+                  Higher score = More points{"\n"}• Points = Score ÷ 10
                 </Text>
               </View>
             </ScrollView>

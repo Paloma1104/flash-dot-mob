@@ -1,20 +1,20 @@
 import { LinearGradient } from "expo-linear-gradient";
 import { useCallback, useEffect, useState } from "react";
 import {
-  ActivityIndicator,
-  Dimensions,
-  Modal,
-  StyleSheet,
-  Text,
-  View,
+    ActivityIndicator,
+    Dimensions,
+    Modal,
+    StyleSheet,
+    Text,
+    View,
 } from "react-native";
 
 import { useMultiplayerStore } from "@/stores/multiplayerStore";
 import { useUserStore } from "@/stores/userStore";
 import { GAME_CONFIGS } from "@/types/game";
 import type {
-  MultiplayerPlayer,
-  MultiplayerSession,
+    MultiplayerPlayer,
+    MultiplayerSession,
 } from "@/types/multiplayer";
 
 // Import game components
@@ -133,7 +133,7 @@ export function MultiplayerGameModal({
           <Text style={styles.yourScore}>Your Score: {myScore}</Text>
           <View style={styles.prizeBox}>
             <Text style={styles.prizeLabel}>Prize Pool</Text>
-            <Text style={styles.prizeAmount}>🪙 {session.totalPool} AP</Text>
+            <Text style={styles.prizeAmount}>🪙 {session.totalPool} Credits</Text>
           </View>
           <Text style={styles.resultNote}>Results are being calculated...</Text>
         </View>
@@ -226,7 +226,7 @@ export function MultiplayerGameModal({
         {/* Prize Pool Footer */}
         <View style={styles.footer}>
           <Text style={styles.prizePoolLabel}>Prize Pool</Text>
-          <Text style={styles.prizePoolValue}>🪙 {session.totalPool} AP</Text>
+          <Text style={styles.prizePoolValue}>🪙 {session.totalPool} Credits</Text>
           <Text style={styles.winnerTakesAll}>Winner takes all!</Text>
         </View>
       </LinearGradient>
