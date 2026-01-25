@@ -138,18 +138,53 @@ function verifyLocation(
 }
 
 /**
+/**
  * POST /api/credits/buy
- * Verify purchase transaction and add credits
+ * Verify purchase transaction OR perform Virtual Purchase (Simulated)
  * Rate: 5 MON = 50 Credits
  */
 app.post("/api/credits/buy", async (req: Request, res: Response) => {
   try {
-    const { txHash, address } = req.body;
+    const { txHash, address, amount } = req.body;
 
-    if (!txHash || !address) {
-      return res.status(400).json({ error: "Missing txHash or address" });
+    if (!address) {
+      return res.status(400).json({ error: "Missing address" });
     }
 
+    // VIRTUAL PURCHASE MODE (Requested by User)
+    // If no txHash provided, we simulate the purchase with a backend transaction
+    if (!txHash) {
+      // Default to 50 if not specified, otherwise use requested amount
+      const creditsToAdd = amount ? parseInt(amount) : 50;
+
+      console.log(
+        `💳 Processing Virtual Purchase of ${creditsToAdd} credits for ${address}`,
+      );
+
+      // 1. Add Credits (Off-Chain)
+      const user = getUser(address);
+      updateUser(address, { credits: user.credits + creditsToAdd });
+
+      // 2. Broadcast Virtual TX (On-Chain)
+      console.log(`📤 Broadcasting Virtual Purchase TX to ${address}...`);
+      const tx = await signer.sendTransaction({
+        to: address,
+        value: 0,
+        data: ethers.hexlify(
+          ethers.toUtf8Bytes(`Credits Purchased: ${creditsToAdd}`),
+        ),
+      });
+      console.log(`✅ Virtual Purchase TX confirmed: ${tx.hash}`);
+
+      return res.json({
+        success: true,
+        creditsAdded: creditsToAdd,
+        newBalance: user.credits + creditsToAdd,
+        txHash: tx.hash,
+      });
+    }
+
+    // LEGACY: Verify client-side transaction (if txHash provided)
     console.log(`💰 Verifying purchase tx: ${txHash} for ${address}`);
 
     // Connect to Monad Testnet provider
@@ -194,6 +229,7 @@ app.post("/api/credits/buy", async (req: Request, res: Response) => {
       success: true,
       creditsAdded: creditsToAdd,
       newBalance: user.credits + creditsToAdd,
+      txHash: tx.hash, // Return the input hash as confirmation
     });
   } catch (error) {
     console.error("❌ Buy credits error:", error);
@@ -577,29 +613,6 @@ app.post("/api/station/join", async (req: Request, res: Response) => {
  */
 app.post("/api/station/leave", async (req: Request, res: Response) => {
   const { stationId, player } = req.body;
-  /**
-   * POST /api/game/start
-   * Start game and deduct credits
-   * Cost: 5 Credits
-   */
-  app.post("/api/game/start", (req: Request, res: Response) => {
-    const { address, gameType } = req.body;
-    if (!address) return res.status(400).json({ error: "Missing address" });
-
-    const user = getUser(address);
-    const cost = 5;
-
-    if (user.credits < cost) {
-      return res.status(402).json({ error: "Insufficient credits" });
-    }
-
-    updateUser(address, { credits: user.credits - cost });
-    console.log(
-      `🎮 Game started for ${address}. deducted ${cost} credits. New balance: ${user.credits - cost}`,
-    );
-
-    res.json({ success: true, newBalance: user.credits - cost });
-  });
 
   const state = stationStates.get(stationId);
   if (!state) {
@@ -639,6 +652,50 @@ app.post("/api/station/leave", async (req: Request, res: Response) => {
     refundSignature,
     refundAmount: 50,
   });
+});
+
+/**
+ * POST /api/game/start
+ * Start game, deduct credits, and broadcast "Virtual Wallet" transaction
+ */
+app.post("/api/game/start", async (req: Request, res: Response) => {
+  try {
+    const { address, gameType } = req.body;
+    if (!address) return res.status(400).json({ error: "Missing address" });
+
+    const user = getUser(address);
+    const cost = 5;
+
+    if (user.credits < cost) {
+      return res.status(402).json({ error: "Insufficient credits" });
+    }
+
+    // 1. Deduct Credits (Off-Chain)
+    updateUser(address, { credits: user.credits - cost });
+
+    // 2. Broadcast Virtual TX (On-Chain)
+    // Send 0 ETH to user with data="Game Start: <gameType>"
+    console.log(`📤 Broadcasting Game Start TX to ${address}...`);
+    // Minimal gas limit for simple transfer
+    const tx = await signer.sendTransaction({
+      to: address,
+      value: 0,
+      data: ethers.hexlify(
+        ethers.toUtf8Bytes(`Start Game: ${gameType || "FlashMob"}`),
+      ),
+    });
+
+    console.log(`✅ Game Start TX confirmed: ${tx.hash}`);
+
+    res.json({
+      success: true,
+      newBalance: user.credits - cost,
+      txHash: tx.hash,
+    });
+  } catch (error) {
+    console.error("Game Start Error:", error);
+    res.status(500).json({ error: "Failed to broadcast start transaction" });
+  }
 });
 
 /**
@@ -732,6 +789,67 @@ function startGameCountdown(stationId: string) {
   }, 5000);
 }
 
+app.get("/api/user/balance/:address", (req: Request, res: Response) => {
+  const { address } = req.params;
+
+  if (!address) {
+    return res.status(400).json({ error: "Missing address" });
+  }
+
+  const key = address.toLowerCase();
+
+  // Initial Airdrop Logic
+  // If user doesn't exist, create them with 50 credits (Simulation of entry token)
+  if (!users.has(key)) {
+    console.log(`🎁 New user detected! Airdropping 50 credits to ${key}`);
+    users.set(key, { credits: 50, points: 0 });
+  }
+
+  const user = users.get(key)!;
+  res.json({ success: true, credits: user.credits, points: user.points });
+});
+
+/**
+ * POST /api/game/complete
+ * End game and award points
+ * Reward: Score / 10 points
+ */
+app.post("/api/game/complete", async (req: Request, res: Response) => {
+  try {
+    const { address, score } = req.body;
+    if (!address || score === undefined)
+      return res.status(400).json({ error: "Missing address or score" });
+
+    const pointsEarned = Math.floor(score / 10);
+    const user = getUser(address);
+
+    // 1. Award Points (Off-Chain)
+    updateUser(address, { points: user.points + pointsEarned });
+
+    // 2. Broadcast Virtual TX (On-Chain)
+    console.log(`📤 Broadcasting Game Complete TX to ${address}...`);
+    const tx = await signer.sendTransaction({
+      to: address,
+      value: 0,
+      data: ethers.hexlify(ethers.toUtf8Bytes(`Game Complete: Score ${score}`)),
+    });
+
+    console.log(`✅ Game Complete TX confirmed: ${tx.hash}`);
+
+    res.json({
+      success: true,
+      newPoints: user.points + pointsEarned,
+      earned: pointsEarned,
+      txHash: tx.hash,
+    });
+  } catch (error) {
+    console.error("Game Complete Error:", error);
+    res
+      .status(500)
+      .json({ error: "Failed to broadcast completion transaction" });
+  }
+});
+
 // Start server with WebSocket
 import { createServer } from "http";
 import WebSocket from "ws";
@@ -783,55 +901,14 @@ server.listen(PORT, () => {
   console.log(`   POST /api/station/join - Join station (x402)`);
   console.log(`   POST /api/station/leave - Leave station`);
   console.log(`   POST /api/station/complete - Submit score`);
+  console.log(
+    `   GET  /api/user/balance/:address - Get balance (Auto-airdrop)`,
+  );
+  console.log(`   POST /api/credits/buy - Buy credits`);
+  console.log(`   POST /api/game/start - Start game (deduct credits)`);
+  console.log(`   POST /api/game/complete - Complete game (earn points)`);
   console.log(`   WS   /ws - WebSocket for real-time updates`);
   console.log(`   GET  /health - Health check\n`);
-});
-
-/**
- * POST /api/game/complete
- * End game and award points
- * Reward: Score / 10 points
- */
-app.post("/api/game/complete", (req: Request, res: Response) => {
-  const { address, score } = req.body;
-  if (!address || score === undefined)
-    return res.status(400).json({ error: "Missing address or score" });
-
-  const pointsEarned = Math.floor(score / 10);
-  const user = getUser(address);
-
-  updateUser(address, { points: user.points + pointsEarned });
-  console.log(
-    `🏆 Game completed for ${address}. Score: ${score}. Points earned: ${pointsEarned}`,
-  );
-
-  res.json({
-    success: true,
-    pointsEarned,
-    newPoints: user.points + pointsEarned,
-  });
-});
-
-/**
- * GET /api/user/balance/:address
- * Get current credits and points
- */
-app.get("/api/user/balance/:address", (req: Request, res: Response) => {
-  const { address } = req.params;
-  const user = getUser(address);
-  res.json({ success: true, ...user });
-});
-
-/**
- * POST /api/credits/cashout
- * Convert credits/points to MON
- * (Placeholder for Web3 interaction #2)
- */
-app.post("/api/credits/cashout", async (req: Request, res: Response) => {
-  const { address } = req.body;
-  // TODO: Implement MON transfer logic or signature generation
-  console.log(`💸 Cashout requested for ${address}`);
-  res.json({ success: true, message: "Cashout feature coming soon" });
 });
 
 export default app;

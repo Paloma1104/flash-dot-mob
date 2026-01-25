@@ -42,16 +42,21 @@ export function useGameCredits() {
     }
   }, [address]);
 
+  /**
+   * Buy Credits
+   * If txHash is provided, verifies real MON purchase.
+   * If no txHash, triggers "Virtual Purchase" (backend signer TX).
+   */
   const buyCredits = useCallback(
-    async (txHash: string) => {
-      if (!address) return;
+    async (txHash?: string, amount?: number) => {
+      if (!address) return { success: false, txHash: null };
       setState({ isLoading: true, error: null, success: false });
 
       try {
         const response = await fetch(`${BACKEND_URL}/api/credits/buy`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ txHash, address }),
+          body: JSON.stringify({ txHash, address, amount }),
         });
 
         const data = await response.json();
@@ -62,12 +67,12 @@ export function useGameCredits() {
 
         setBalance((prev) => ({ ...prev, credits: data.newBalance }));
         setState({ isLoading: false, error: null, success: true });
-        return true;
+        return { success: true, txHash: data.txHash || null };
       } catch (error) {
         const msg =
           error instanceof Error ? error.message : "Buy credits failed";
         setState({ isLoading: false, error: msg, success: false });
-        return false;
+        return { success: false, txHash: null };
       }
     },
     [address],
@@ -75,7 +80,7 @@ export function useGameCredits() {
 
   const startGame = useCallback(
     async (gameType: string) => {
-      if (!address) return false;
+      if (!address) return { success: false, txHash: null };
 
       try {
         const response = await fetch(`${BACKEND_URL}/api/game/start`, {
@@ -94,10 +99,10 @@ export function useGameCredits() {
         }
 
         setBalance((prev) => ({ ...prev, credits: data.newBalance }));
-        return true;
+        return { success: true, txHash: data.txHash || null }; // Mock or real hash
       } catch (error) {
         console.error("Start game API error:", error);
-        return false;
+        return { success: false, txHash: null };
       }
     },
     [address],
@@ -105,7 +110,7 @@ export function useGameCredits() {
 
   const completeGame = useCallback(
     async (score: number) => {
-      if (!address) return;
+      if (!address) return { success: false, txHash: null };
 
       try {
         const response = await fetch(`${BACKEND_URL}/api/game/complete`, {
@@ -118,9 +123,12 @@ export function useGameCredits() {
 
         if (data.success) {
           setBalance((prev) => ({ ...prev, points: data.newPoints }));
+          return { success: true, txHash: data.txHash || null };
         }
+        return { success: false, txHash: null };
       } catch (error) {
         console.error("Complete game API error:", error);
+        return { success: false, txHash: null };
       }
     },
     [address],

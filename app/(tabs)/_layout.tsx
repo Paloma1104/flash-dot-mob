@@ -1,7 +1,7 @@
-import { Tabs } from 'expo-router';
-import React from 'react';
+import { Tabs } from "expo-router";
+import React from "react";
 
-import { ModernTabBar } from '@/components/navigation/ModernTabBar';
+import { ModernTabBar } from "@/components/navigation/ModernTabBar";
 
 export default function TabLayout() {
   return (
@@ -9,27 +9,33 @@ export default function TabLayout() {
       tabBar={(props) => <ModernTabBar {...props} />}
       screenOptions={{
         headerShown: false,
-        tabBarStyle: { display: 'none' },
-      }}>
+        tabBarStyle: { display: "none" },
+      }}
+    >
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Map',
+          title: "Map",
+        }}
+      />
+      <Tabs.Screen
+        name="market"
+        options={{
+          title: "Market",
         }}
       />
       <Tabs.Screen
         name="wallet"
         options={{
-          title: 'Wallet',
+          title: "Wallet",
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
-          title: 'Profile',
+          title: "Profile",
         }}
       />
     </Tabs>
   );
 }
-

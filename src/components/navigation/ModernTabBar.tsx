@@ -27,6 +27,7 @@ const TAB_CONFIG: Record<
   { icon: keyof typeof Ionicons.glyphMap; label: string }
 > = {
   index: { icon: "map", label: "Map" },
+  market: { icon: "cart", label: "Market" },
   wallet: { icon: "wallet", label: "Wallet" },
   profile: { icon: "person", label: "Profile" },
 };

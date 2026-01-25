@@ -46,11 +46,14 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
   const { startGame, completeGame, cancelGame } = useGameStore();
   const { isConnected, address } = useWallet();
   const {
+    buyCredits,
     startGame: startGameOffChain,
     completeGame: completeGameOffChain,
     isLoading: isStarting,
     error: startError,
   } = useGameCredits();
+
+  const [txHash, setTxHash] = React.useState<string | null>(null);
 
   // Legacy variables set to null/false for compatibility if needed
   const isClaiming = false;
@@ -71,19 +74,49 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
 
     try {
       // Call backend to deduct credits
-      const success = await startGameOffChain(gameDrop.gameType);
+      const { success, txHash: startTxHash } = await startGameOffChain(
+        gameDrop.gameType,
+      );
 
       if (success) {
         // Update local state
         const localSuccess = await startGame(gameDrop);
         if (localSuccess) {
           setGameStarted(true);
+          setTxHash(null); // Clear previous hash
         }
       } else {
-        Alert.alert(
-          "Start Failed",
-          startError || "Insufficient credits (5 needed). Please buy more.",
-        );
+        // Handle Insufficient Credits specifically
+        if (
+          startError === "Insufficient credits" ||
+          startError?.includes("credits")
+        ) {
+          Alert.alert(
+            "Insufficient Credits",
+            "You need 5 credits to play. Buy 50 now?",
+            [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Buy Now (50 Credits)",
+                onPress: async () => {
+                  // Virtual Purchase (Backend Signer)
+                  const { success: buySuccess, txHash: buyTxHash } =
+                    await buyCredits();
+                  if (buySuccess) {
+                    Alert.alert("Success!", "Credits added.", [
+                      { text: "Play Now", onPress: () => handleStartGame() },
+                    ]);
+                    setTxHash(buyTxHash);
+                  } else {
+                    Alert.alert("Error", "Purchase failed.");
+                  }
+                },
+              },
+            ],
+          );
+        } else {
+          Alert.alert("Start Failed", startError || "Please try again.");
+        }
       }
     } catch (error) {
       console.error("Failed to start game:", error);
@@ -102,7 +135,11 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
 
     // 2. Call backend to award points
     if (score > 0) {
-      await completeGameOffChain(score);
+      const { success, txHash: completeTxHash } =
+        await completeGameOffChain(score);
+      if (success && completeTxHash) {
+        setTxHash(completeTxHash);
+      }
     }
 
     setGameStarted(false);
@@ -113,6 +150,7 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
     cancelGame();
     setGameStarted(false);
     setShowResults(false);
+    setTxHash(null);
     onClose();
   };
 
@@ -209,8 +247,20 @@ export function GameModal({ visible, gameDrop, onClose }: GameModalProps) {
                     <Text style={styles.rewardValue}>+{pointsEarned}</Text>
                     <Text style={styles.rewardToken}>POINTS</Text>
                   </View>
+
+                  {txHash && (
+                    <View style={styles.txBox}>
+                      <Text style={styles.txLabel}>
+                        Virtual Wallet Tx Confirmed:
+                      </Text>
+                      <Text style={styles.txHash}>
+                        {txHash.slice(0, 10)}...{txHash.slice(-8)}
+                      </Text>
+                    </View>
+                  )}
+
                   <Text style={styles.rewardSubtext}>
-                    Added to your leaderboard score
+                    Value added to global ledger
                   </Text>
                 </View>
               )}
@@ -653,5 +703,24 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     color: "#FFF",
+  },
+  txBox: {
+    marginTop: 15,
+    padding: 10,
+    backgroundColor: "rgba(0, 0, 0, 0.3)",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(131, 110, 249, 0.3)",
+    alignItems: "center",
+  },
+  txLabel: {
+    fontSize: 12,
+    color: "#AAA",
+    marginBottom: 4,
+  },
+  txHash: {
+    fontSize: 12,
+    fontFamily: "monospace",
+    color: "#836EF9",
   },
 });
